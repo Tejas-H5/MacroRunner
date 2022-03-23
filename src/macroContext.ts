@@ -1,33 +1,17 @@
 import * as vscode from "vscode";
-
-export class InMemoryFile {
-    // directly get and set this
-    text:string;
-    // use this for debug purposes. All of these edits will be sequentially applied before the final one, so that you can
-    // use redo and undo to preview them
-    intermediateStates: string[]
-
-    constructor(text:string) {
-        this.text = text;
-        this.intermediateStates = new Array<string>();
-    }
-
-    pushIntermediateState() {
-        this.intermediateStates.push(this.text);
-    }
-}
+import EditableFile from "./editableFile";
 
 class MacroContext {
     private document: vscode.TextDocument;
-    private files: [InMemoryFile];
+    private files: [EditableFile];
 
     constructor(editor: vscode.TextEditor) {
         this.document = editor.document;
-        this.files = [new InMemoryFile(this.document.getText())];
+        this.files = [new EditableFile(this.document.getText())];
     }
 
     newFile(text="") {
-        const newFile = new InMemoryFile(text);
+        const newFile = new EditableFile(text);
         this.files.push(newFile);
         return newFile;
     }

@@ -1,9 +1,10 @@
-//macro
 import * as vscode from "vscode";
 import DebugContext from "./debugContext";
-import MacroContext, { InMemoryFile } from "./macroContext";
+import EditableFile, { injectedFunctions } from "./editableFile";
+import MacroContext from "./macroContext";
 import macroTemplate from "./macroTemplate";
 import macroUtil from "./macroUtil";
+import { containsWhileLoop } from "./sourceUtil";
 
 const newMacroCommand = async () => {
     let document = await vscode.workspace.openTextDocument({
@@ -16,30 +17,6 @@ const newMacroCommand = async () => {
         document,
         visibleEditors.length === 1 ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active
     );
-
-    
-    // Testing code
-    // TODO: delete everything after and including these comments once we figure out a better way to test
-
-    let targetEditor = visibleEditors[0] === vscode.window.activeTextEditor ? 1 : 0;
-    let targetDocument = visibleEditors[targetEditor];
-    targetDocument.edit((editBuilder) => {
-        editBuilder.insert(
-            document.positionAt(0),
-            `
-Here is a bunch of sample text. its quite good you see
-for testing purposes and such,
-
-for(int i = 0; i < 10; i++) {
-    what even is this language tho.
-
-    Why I m thinking this 10 times ? odd isnt it
-}
-
-Maybe should've gone with some lorem upsum doremi 
-        `
-        );
-    });
 };
 
 const replaceAll = async (text: string, targetEditor: vscode.TextEditor) => {
@@ -52,12 +29,12 @@ const replaceAll = async (text: string, targetEditor: vscode.TextEditor) => {
     });
 };
 
-const replaceAllFile = async (file: InMemoryFile, targetEditor: vscode.TextEditor) => {
-    for(let i = 0; i < file.intermediateStates.length; i++) {
+const replaceAllFile = async (file: EditableFile, targetEditor: vscode.TextEditor) => {
+    for (let i = 0; i < file.intermediateStates.length; i++) {
         await replaceAll(file.intermediateStates[i], targetEditor);
     }
 
-    await replaceAll(file.text, targetEditor)
+    await replaceAll(file.text, targetEditor);
 };
 
 const runMacroCommand = async () => {
@@ -66,7 +43,7 @@ const runMacroCommand = async () => {
     if (visibleEditors.length !== 2 || !visibleEditors[0].document || !visibleEditors[1].document) {
         vscode.window
             .showErrorMessage(`This command needs exactly two editors to be open in a split configuration 
-- one with the javascript macro and another with the target document. You currently have ${visibleEditors.length}.`);
+        - one with the javascript macro and another with the target document. Create a new macro with the New macro command`);
         return;
     }
 
@@ -78,9 +55,9 @@ const runMacroCommand = async () => {
 
     let macroDocument = activeEditor.document;
     if (macroDocument.languageId !== "javascript") {
-        vscode.window.showErrorMessage(
-            `The macro window must have JavaScript code. Are you sure this is the correct window?`
-        );
+        vscode.window.showErrorMessage(`Error`, {
+            detail: "The macro window must have JavaScript code. Are you sure this is the correct window?",
+        });
         return;
     }
 
@@ -92,20 +69,26 @@ const runMacroCommand = async () => {
         return;
     }
 
+    if (containsWhileLoop(code)) {
+        vscode.window.showWarningMessage(
+            "I strongly recommend against using while loops in your code, as this extension has no way to break out infinite loops at the moment. Have task-manager or similar on hand just in case",
+            { modal: true }
+        );
+    }
+
+    // actually run the macro
     let targetEditorIndex = activeEditor === visibleEditors[0] ? 1 : 0;
-    let success: boolean;
     let targetEditor = visibleEditors[targetEditorIndex];
     let targetEditorLanguage = targetEditor.document.languageId;
 
-    // actually run the macro
     let ctx = new MacroContext(targetEditor);
     let debug = new DebugContext();
     let util = macroUtil;
 
     await Function(`"use strict";
-    return (async (macroContext, debug, util) => {
+    return (async (macroContext, debug, util, ${injectedFunctions.map(o => o.name).join(",")}) => {
         ${code}
-    });`)()(ctx, debug, util);
+    });`)()(ctx, debug, util, ...injectedFunctions);
 
     // apply all results
     const newFile = ctx.getFile(0);
@@ -114,16 +97,17 @@ const runMacroCommand = async () => {
     let targetColumn = targetEditor.viewColumn;
     // create all new files
     for (let i = 1; i < ctx.fileCount(); i++) {
-        // TODO: work around the bug [edit not possible on closed editors], as this doesnt allow for 
+        // TODO: work around the bug [edit not possible on closed editors], as this doesnt allow for
         // intermediate states
         let newDocument = await vscode.workspace.openTextDocument({
-            content: ctx.getFile(i).text,
+            content: " ", //ctx.getFile(i).text,
             language: targetEditorLanguage,
         });
 
         visibleEditors = vscode.window.visibleTextEditors;
-        await vscode.window.showTextDocument(newDocument, targetColumn, true);
-        //await replaceAllFile(, visibleEditors[targetEditorIndex]);
+        await vscode.window.showTextDocument(newDocument, targetColumn, true).then(async (textEditor) => {
+            await replaceAllFile(ctx.getFile(i), textEditor);
+        });
     }
 };
 

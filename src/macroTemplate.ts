@@ -1,15 +1,21 @@
 const defaultMacro = `// macro
-// Find documentation about the injected ctx and debug objects here: [TODO: put the documentation link here]
+// Find documentation about the injected objects here: [TODO: add link here once we're finished documenting this]
 
-/**
- * Name : Unnamed Macro
- * Author: Someone
- * Documentation: None yet
- */
-
-debug.info("test");
 const file = macroContext.getFile();
+// Wrap text in a string for string autocomplete, even though file.text is already a string
+` + 
+"let text = `${file.text}`;" + 
 `
+
+// Make your modifications here
+
+
+
+file.text = text;
+debug.info("macro completed");
+`
+
+
 
 
 
