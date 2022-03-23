@@ -89,8 +89,7 @@ export default class EditableFile {
         return true;
     }
 
-    // before will only work if we inputted a string. otherwise it has no meaning. 
-    // or rather I can't think what it would mean
+    // TODO: better define
     toPrev(cursors: number[], expr: RegExp | string, before: boolean = false) {
         let newCursors = [...cursors];
         if (expr instanceof RegExp) {

@@ -42,13 +42,14 @@ A way to automate boring tasks in vs-code
 	-> less verbose API
 		-> take a look at the code I wrote, and see where my API could improve it
 			- need a way to inject arbitrary number objects cleanly
-			-* [cursors, ends] = findAll(regex)
-			-* cursors = file.toNext(cursors, regex)
-				-* file.afterNext(cursors,regex)
-			-* cursors = file.toPrev(cursors, regex)
-				-* file.beforePrev(cursors,regex)
+			- [cursors, ends] = findAll(regex)
+			- cursors = file.toNext(cursors, regex)
+				- file.afterNext(cursors,regex)
+			- cursors = file.toPrev(cursors, regex)
+				- file.beforePrev(cursors,regex)
+			- move(cursors, lines)
 			-* cursors, ends = file.findNext
-			-* moveLines(cursors, lines)
+				-> findPrev
 			-* file.substrings(starts, ends)
 			-* cursors = file.rangeReplace(cursors, ends, content,  ...cursorsToKeepSynced)
 				[i] most important but also the hardest, and will need the most unit tests
@@ -132,6 +133,9 @@ A way to automate boring tasks in vs-code
 		-* batch insert - array of positions, array of text
 			- return a new array of positions, modifying the text is modifying the cursor positiosn as well adn my current approach doesn't know abt this
 		-* 
+
+	-* a way to preview the output while it's running. 
+		[i] would enable ascii animating
 	
 	-* dont spam outputs	
 	-* harder utils:
