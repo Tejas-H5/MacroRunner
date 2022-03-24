@@ -54,21 +54,30 @@ class MacroContext {
         await replaceAll(this.getFile(handle).getText(), this.editor);
     }
 
-    loop(interval: number, handler: () => boolean) {
+    loop(interval: number, handler: (n:number) => boolean, count: number|undefined) {
+        let i = 0;
         let id = setInterval(() => {
             try {
-                if (handler()) {
+                if(count !== undefined && i > count){
                     clearInterval(id);
+                    return;
                 }
+
+                if (handler(i)) {
+                    clearInterval(id);
+                    return;
+                }
+
+                i++;
             } catch (error: any) {
                 console.log(error);
                 vscode.window.showErrorMessage("coding error:", {
                     modal: true,
                     detail: error,
                 });
-            } finally {
+
                 clearInterval(id);
-            }
+            } 
         }, interval);
     }
 }
