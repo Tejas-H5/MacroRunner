@@ -1,148 +1,120 @@
 export default class EditableFile {
-    // directly get and set this
-    text: string;
-    // use this for debug purposes. All of these edits will be sequentially applied before the final one, so that you can
-    // use redo and undo to preview them
+    private text: string;
+    private isDebug: boolean;
     intermediateStates: string[];
 
     constructor(text: string) {
         this.text = text;
         this.intermediateStates = new Array<string>();
+        this.isDebug = false;
+    }
+
+    setText(newText: string) {
+        if (this.isDebug) {
+            this.markUndoPoint();
+        }
+        this.text = newText;
+    }
+
+    getText() {
+        return this.text;
     }
 
     markUndoPoint() {
         this.intermediateStates.push(this.text);
     }
 
-    findAll(expr: RegExp | string) {
-        let starts = new Array<number>(),
-            ends = new Array<number>();
+    matchNext(expr: RegExp | string, position: number) {
+        expr = new RegExp(expr);
 
-        if (expr instanceof RegExp) {
-            let matches = this.text.matchAll(expr);
-            for (const match of matches) {
-                if (match.index) {
-                    starts.push(match.index);
-                    ends.push(match.index + match.length);
-                }
-            }
-        } else {
-            if (expr === "") return [[], []];
+        // JS strings are immutable, so this shouldn't allocate anything at all. Right?
+        const substr = this.text.substring(position);
+        const matches = substr.matchAll(expr);
+        for (const match of matches) {
+            return match;
+        }
 
-            let pos = 0;
-            while (pos !== -1) {
-                pos = this.text.indexOf(expr, pos);
-                starts.push(pos);
+        return null;
+    }
 
-                pos += expr.length;
-                ends.push(pos);
+    replace(ranges: number[][], strings: string[]) {
+        // check for overlapping ranges
+        ranges = ranges.sort((a, b) => {
+            return a[0] - b[0];
+        });
+
+        for (let i = 1; i < ranges.length; i++) {
+            // check if previous range extends over current range. (inclusive, exclusive)
+            if (ranges[i - 1][1] > ranges[i][0]) {
+                throw new Error(`Range ${i - 1} : ${ranges[i - 1]} overlaps with ${i} : ${ranges[i]}`);
             }
         }
 
-        return [starts, ends];
-    }
+        const stringBuilder: string[] = [];
+        let previousIndex = 0;
+        let currentDelta = 0;
+        const newRanges = ranges.map((x) => [...x]);
+        for (let i = 0; i < ranges.length; i++) {
+            const [start, end] = ranges[i];
+            stringBuilder.push(this.text.slice(previousIndex, start));
+            stringBuilder.push(strings[i]);
+            previousIndex = end;
 
-    toNext(cursors: number[], expr: RegExp | string, after: boolean = false) {
-        let newCursors = [...cursors];
-        if (expr instanceof RegExp) {
-            for (let i = 0; i < cursors.length; i++) {
-                if (cursors[i] === -1) continue;
-
-                // JS strings are immutable, so this shouldn't allocate anything at all. Right?
-                const substr = this.text.substring(newCursors[i]);
-                const match = substr.match(expr);
-                if (!match || !match.index) {
-                    newCursors[i] = -1;
-                    continue;
-                }
-
-                newCursors[i] = newCursors[i] + match.index;
-                if (after) {
-                    newCursors[i] += match.length;
-                }
-            }
-        } else {
-            for (let i = 0; i < cursors.length; i++) {
-                if (cursors[i] === -1) continue;
-
-                newCursors[i] = this.text.indexOf(expr, newCursors[i]);
-                if (after) {
-                    newCursors[i] += expr.length;
-                }
-            }
+            currentDelta += strings[i].length - (end - start);
+            newRanges[i][0] += currentDelta;
+            newRanges[i][1] += currentDelta;
         }
+        stringBuilder.push(this.text.slice(previousIndex));
 
-        return newCursors;
+        this.text = stringBuilder.join("");
+        return newRanges;
     }
 
-    afterNext(cursors: number[], expr: RegExp | string) {
-        return this.toNext(cursors, expr, true);
+    insert(positions: number[], strings: string[]) {
+        return this.replace(
+            positions.map((x) => [x, x]),
+            strings
+        );
+    }
+
+    remove(ranges: number[][]) {
+        return this.replace(
+            ranges,
+            ranges.map((x) => "")
+        );
+    }
+
+    indexAfter(str: string, position: number | undefined) {
+        return this.text.indexOf(str, position) + str.length;
     }
 
     private reverseStringCompare(str: string, pos: number) {
-        if (pos + 1 - str.length === 0) return false;
+        if (pos + 1 - str.length < 0) return false;
 
-        for (let i = 0; i > str.length; i++) {
-            if (str[i] !== this.text[pos - i]) return false;
+        for (let i = 0; i < str.length; i++) {
+            if (this.text[pos - i] !== str[i]) {
+                return false;
+            }
         }
 
         return true;
     }
 
-    // TODO: better define
-    toPrev(cursors: number[], expr: RegExp | string, before: boolean = false) {
-        let newCursors = [...cursors];
-        if (expr instanceof RegExp) {
-            // how to even do this part? TODO: speed up this implementation somehow. Any PRers ?
+    lastIndexAfter(str: string, position: number) {
+        if (str === "") return -1;
 
-            // this is the only way I can think to do it other than literally reversing the regex itself. some guy really did that in Java and had a 1500 + line codebase dedicated to it
-            const matches = this.text.matchAll(expr);
-            const matchArray = [];
-            for (const match of matches) {
-                matchArray.push(match);
-            }
-
-            for (let i = 0; i < cursors.length; i++) {
-                if (cursors[i] === -1) continue;
-
-                for (let j = matchArray.length - 1; j >= 0; j--) {
-                    const index = matchArray[j].index;
-                    if (!index) continue;
-
-                    if (index < newCursors[i]) {
-                        newCursors[i] = index;
-                    }
-                }
-            }
-        } else {
-            for (let i = 0; i < cursors.length; i++) {
-                if (cursors[i] === -1) continue;
-
-                if (before) {
-                    newCursors[i] = this.text.lastIndexOf(expr, newCursors[i]);
-                } else {
-                    // this behaviour is better but it is quite possibly slower.
-                    for (let j = newCursors[i]; j >= 0; j--) {
-                        if (this.reverseStringCompare(expr, j)) {
-                            newCursors[i] = j;
-                            break;
-                        }
-                    }
-                    newCursors[i] === -1;
-                }
+        for (let i = position; i > str.length - 1; i--) {
+            if (this.reverseStringCompare(str, position)) {
+                return i;
             }
         }
 
-        return newCursors;
-    }
-
-    beforePrev(cursors: number[], expr:string) {
-        return this.toPrev(cursors, expr, true);
+        return -1;
     }
 }
 
-const move = (cursors: [number], amount: number) => {
+const move = (cursors: number[], amount: number) => {
     return cursors.map((i) => i + amount);
 };
 
-export const injectedFunctions: [Function] = [move];
+export const injectedFunctions: Function[] = [move];

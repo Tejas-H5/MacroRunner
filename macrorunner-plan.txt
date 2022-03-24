@@ -1,26 +1,3 @@
-A way to automate boring tasks in vs-code
-
-- Create newMacro command
-	- It just opens a new untitled javascript document
-- Create a runMacro command
-	- it just evals whatever is currently open, and applies it to the other document that is open.
-	
-- Envision the API
-	- The visual studio editing API is fully ASYNC. This is probably great for performance, but terrible for user-friendlyness. I hate that I have to prefix every line with await, and that if I forget to do this, my code will break. This is not an acceptable solution for beginners.
-		- I could make each function call append to an array of function calls with a function object + arguments
-			- but what if I need to check the state of the document after each modification? can't do it like this
-		- how about a custom edit-builder object that wraps the	
-			- but I ahve hte same problem here as I do before.
-		- ok how about using deasync
-			- but the maintainers of de-async and everyone else says that its a hack and it causes serious problems and I shouldnt use it
-		- Ok so how about I create my own macro language and I interpret it and it translates into async calls udner the hood
-			- too much effort, too high of a learning curve. why should people learn some obscure language that may not even work
-		- Ok so how about all our functions will modify a string synchronously. and then at the end, we simply replace the entire document. This is how our current python approach works anyway.
-			- This sounds like the best option so far. But what are the performance implications?
-				- doesn't seem to be any I can find on the internet so far. They cant be too bad if I am already doing this in python. COol, this is the approach.
-			- how will we be able to move the cursors around without Async?
-				- cursors will be virtual, they will be applied at the end artificially
-
 -> Create the API:
 	- access and modify text
 		- test
@@ -32,109 +9,25 @@ A way to automate boring tasks in vs-code
 		- Test
 		
 	- mitigate infinite loops (yes this happened)
-		- nothing can be done about them. I will make the program print a warning if it detects the word "while\(.+\)" somewhere in the code, and how they should start up task manager and end visual studio since there is no other known way to mitgate against them. I've also added some more code to make it a little smart, but yeah
+		- nothing can be done about them. I will make the program print a warning if it detects the word "while\(.+\)" somewhere in the code, and how they should start up task manager and end visual studio since there is no other known way to mitgate against them. I've also added some more code to make it a little smart, like regex that removes single/multiline comments, "'` strings and /regex/ objects before doing the check, but yeah
 			-* unit tests
+			
+		-* Investigate another thread + pthread_kill
 	
 	-* Selection manipulation
 		-* getEditorSelection
 		-* 
-	
-	-> less verbose API
-		-> take a look at the code I wrote, and see where my API could improve it
-			- need a way to inject arbitrary number objects cleanly
-			- [cursors, ends] = findAll(regex)
-			- cursors = file.toNext(cursors, regex)
-				- file.afterNext(cursors,regex)
-			- cursors = file.toPrev(cursors, regex)
-				- file.beforePrev(cursors,regex)
-			- move(cursors, lines)
-			-* cursors, ends = file.findNext
-				-> findPrev
-			-* file.substrings(starts, ends)
-			-* cursors = file.rangeReplace(cursors, ends, content,  ...cursorsToKeepSynced)
-				[i] most important but also the hardest, and will need the most unit tests
-				[i] rangeDelete can be replace(""), that way replace will be slightly faster than implementin it as delete + insert
-				[i] insert can just be replace(cursors, cursors, content)
-			
 
-			Discussion:
-			
-			for(const match of matches){
-				arr.push(match.index)
-			}			
-			improve to:
-			-* [[starts], [ends]] = file.findAll(regex)
-			
-			function escapeRegExp(text) {
-				return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-			}
-			improve to:
-			-* Make all functions accept string or regex, and behave differently based on which was used. forget abt this function lmao
-
-			-* positions = file.next(positions, str|regex, toEnd?)
-			-* positions = file.prev(positions, regex, toEnd?)
-			-* positions = file.moveLines(positions, num)
-			-* positions = move(positions, num)
-			-* substrings = file.substrings(starts, ends)
-			- strings = strings.map(str => `dasdsds[ + ${str}`); 
-				- already a JavaScript thing
-			
-			-* In theory we can now improve this:
-				for(const match of positions) {
-					let pos = match.index;
-					pos = text.indexOf("label=", pos)
-					let pos1 = text.indexOf("\"", pos+1)
-					let pos2 = text.indexOf("\"", pos1+1)
-
-					let hasPos = text.lastIndexOf("source=\"Has", pos2)
-					hasPos += "source=\"".length;
-					let hasPosEnd = text.indexOf("\"", hasPos+1);
-					let hasVariable = text.substring(hasPos, hasPosEnd);
-
-					inserts.push([pos1, '{']);
-					inserts.push([pos2, `" + formData.${hasVariable} ? "*" : "`]);
-					inserts.push([pos2+1, `}`]);
-					( this part is wrong since we are modifying the string who's matches we are iterating over. The index returned from match.index will no longer be in sync with the file )
-					//text = text.slice(0, pos1) + "{" + text.slice(pos1,pos2) +  + text.slice(pos2+1)
-				}
-				
-				to this:
-				
-				let [cursors, ends] = file.matchAll(/\{\(\{formData\}\)\s?=>/g)
-				
-				// this can part can just be a regex search and replace really.
-				// file.replaceNext(cursors, /label=("\w+")/, "label={\"$1\"}"
-							- which leads to replace previous
-				cursors = file.next(cursors, "label=\"")
-				cursors = file.insert(cursors, "{", starts)
-				cursors = file.nextAfter("\"")
-				cursors = file.insert(cursors, "}")
-				
-				let cursorsHas = file.prev(cursors, "source=\"Has"); // notice that this stops at the end of the find, unlinke lastIndexOf
-				cursorsHas = move(cursorsHas, -3)
-				let endsHas = file.next(cursorsHas, "\"")
-				let hasVars = file.substrings(cursorsHas, endsHas);
-				let conditionalAsterixes = hasVars.map(
-					v =>`" + formData.${v} ? "*" : "`
-				);
-				cursors = file.insertAndMove(cursors, conditionalAsterixes)
-				cursors = file.insert("}");
-			
-				
-				technically the previous code would be more performant, but lower is just faster to write and reason with once you start thinking in that paradigm. and since the performance of running the macro would be barely noticeable, the speedup of writing is worth it. however Both are convoluted to some degree. The second also has the issue of cursors going out of sync after doing an insert. (cursors and ends and starts and whatever are just 0 based indexes from the start of the string, or as we in english like to say, numbers);
-				
-
-		
 		-* positions = file.insert(positions, contents)
 		-* positions = file.prev(positions, "^")
 		
 		
 		-* regex escape
 		-* batch insert - array of positions, array of text
-			- return a new array of positions, modifying the text is modifying the cursor positiosn as well adn my current approach doesn't know abt this
+			- return a new array of positions, modifying the text is modifying the cursor position as well adn my current approach doesn't know abt this
 		-* 
 
-	-* a way to preview the output while it's running. 
+	-* a way to push the output while it's running. 
 		[i] would enable ascii animating
 	
 	-* dont spam outputs	
@@ -149,133 +42,22 @@ A way to automate boring tasks in vs-code
 
  
 -------------- test text
- 
-Here is a bunch of sample text. its quite good you see
-for testing purposes and such,
-
-for(int i = 0; i < 10; i++) {
-    what even is this language tho.
-
-    Why I m thinking this 10 times ? odd isnt it
-}
-
-Maybe should've gone with some lorem upsum doremi 
-
-
-//////////////// batch insert code
-
-function escapeRegExp(text) {
-    return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-}
-
-let positions = text.matchAll(/\{\(\{formData\}\)\s?=>/g)
-for(const match of matches){
-	arr.push(match.index)
-}
-let inserts = []
-
-
-
-let stringBuilder = []
-let lastIndex = 0;
-for(const [index, insertText] of inserts) {
-    stringBuilder.push(text.slice(lastIndex, index));
-    stringBuilder.push(insertText);
-    lastIndex = index;
-}
-stringBuilder.push(text.slice(lastIndex))
-
-text = stringBuilder.join("");
-
-file.text = text;
-debug.info("macro completed");
-
-
-
-
-
-
-
-
-
-
-////////// sample code that I've written to find all requried fields
-// macro
-// Find documentation about the injected objects here: [TODO: add link here once we're finished documenting this]
-
-const file = macroContext.getFile();
-// Wrap text in a string for string autocomplete, even though file.text is already a string
-let text = `${file.text}`;
-
-// Make your modifications here
-
-const output = macroContext.newFile();
-
-
-let pos = text.indexOf("isRequired", 0);
-let counter = 0;
-const fields = [];
-while (pos !== -1) {
-    counter+=1;
-    if (counter > 100)
-        break;
-
-    let start = text.lastIndexOf("<", pos);
-    let end = text.indexOf("/>", start);
-    let labelPos = text.indexOf("label=\"", start) + "label=\"".length;
-
-    if(labelPos > end){
-        labelPos = text.indexOf("source=\"", start) + "source=\"".length;
-        if(labelPos > end){
-            continue;
-        }
-    }
-
-    let labelPosEnd = text.indexOf("\"", labelPos+1);
-
-    fields.push(text.substring(labelPos, labelPosEnd));
-    
-    pos = text.indexOf("isRequired", labelPosEnd);
-}
-
-output.text = fields.join("\n")
-debug.info("macro completed");
-
-
-
-
-While testcase
-
 
 // macro
-// Find documentation about the injected objects here: [TODO: add link here once we're finished documenting this]
+// Find documentation about the injected objects here: https://github.com/El-Tejaso/macrorunner
 
-const file = macroContext.getFile();
-// Wrap text in a string for string autocomplete, even though file.text is already a string
-let text = `${file.text}`;
+const file = context.getFile();
+let text = `${file.getText()}`; // autocomplete purposes. I don't know how to inject autocomplete just yet
 
 // Make your modifications here
 
 
-// while
 
-/*
+context.loop(100, () => {
+  asod;fa;djlsfk
 
-// while
-while
-
-*/
-
-while(false) {
-
-}
-
-const x  = "while";
-const y = `whilehwilehhwile`;
-const a = 'bruh';
-
-
-debug.info("macro completed");
+  return true;
+})
 
 
 

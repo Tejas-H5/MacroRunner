@@ -3,7 +3,7 @@ import DebugContext from "./debugContext";
 import EditableFile, { injectedFunctions } from "./editableFile";
 import MacroContext from "./macroContext";
 import macroTemplate from "./macroTemplate";
-import macroUtil from "./macroUtil";
+import { replaceAllFile } from "./macroUtil";
 import { containsWhileLoop } from "./sourceUtil";
 
 const newMacroCommand = async () => {
@@ -19,22 +19,13 @@ const newMacroCommand = async () => {
     );
 };
 
-const replaceAll = async (text: string, targetEditor: vscode.TextEditor) => {
-    await targetEditor.edit((edit) => {
-        const all = new vscode.Range(
-            new vscode.Position(0, 0),
-            targetEditor.document.positionAt(targetEditor.document.getText().length)
-        );
-        edit.replace(all, text);
-    });
-};
-
-const replaceAllFile = async (file: EditableFile, targetEditor: vscode.TextEditor) => {
-    for (let i = 0; i < file.intermediateStates.length; i++) {
-        await replaceAll(file.intermediateStates[i], targetEditor);
-    }
-
-    await replaceAll(file.text, targetEditor);
+const compactStack = (stack: string) => {
+    let earlyCutoff = stack.indexOf("at eval (eval at runMacroCommand");
+    stack = stack.substring(0, earlyCutoff);
+    stack += "\n  <The rest of the stack is internal to the macroRunner codebase and not relevant>";
+    stack = stack.replace(/\w+:.+\\/g, ".../");
+    stack = stack.replace(/\t/g, "    ");
+    return stack;
 };
 
 const runMacroCommand = async () => {
@@ -83,12 +74,24 @@ const runMacroCommand = async () => {
 
     let ctx = new MacroContext(targetEditor);
     let debug = new DebugContext();
-    let util = macroUtil;
 
-    await Function(`"use strict";
-    return (async (macroContext, debug, util, ${injectedFunctions.map(o => o.name).join(",")}) => {
-        ${code}
-    });`)()(ctx, debug, util, ...injectedFunctions);
+    try {
+        const macroFunction = Function(`
+"use strict";
+return (async (context, debug, ${injectedFunctions.map((o) => o.name).join(",")}) => {
+${code}
+});`)();
+
+        await macroFunction(ctx, debug, ...injectedFunctions);
+    } catch (e: any) {
+        vscode.window.showErrorMessage("Error: " + e.message, {
+            modal: true,
+            detail: compactStack(e.stack),
+        });
+
+        //vscode.window.showErrorMessage("Error: " + e.message + "\n" + compactStack(e.stack));
+        return;
+    }
 
     // apply all results
     const newFile = ctx.getFile(0);

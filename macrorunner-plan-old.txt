@@ -1,0 +1,120 @@
+Anything i feel is cluttering macrorunner-plan I throw in here
+---------------------------------------------------------
+A way to automate boring tasks in vs-code
+
+- Create newMacro command
+	- It just opens a new untitled javascript document
+- Create a runMacro command
+	- it just evals whatever is currently open, and applies it to the other document that is open.
+	
+- Envision the API
+	- The visual studio editing API is fully ASYNC. This is probably great for performance, but terrible for user-friendlyness. I hate that I have to prefix every line with await, and that if I forget to do this, my code will break. This is not an acceptable solution for beginners.
+		- I could make each function call append to an array of function calls with a function object + arguments
+			- but what if I need to check the state of the document after each modification? can't do it like this
+		- how about a custom edit-builder object that wraps the	
+			- but I ahve hte same problem here as I do before.
+		- ok how about using deasync
+			- but the maintainers of de-async and everyone else says that its a hack and it causes serious problems and I shouldnt use it
+		- Ok so how about I create my own macro language and I interpret it and it translates into async calls udner the hood
+			- too much effort, too high of a learning curve. why should people learn some obscure language that may not even work
+		- Ok so how about all our functions will modify a string synchronously. and then at the end, we simply replace the entire document. This is how our current python approach works anyway.
+			- This sounds like the best option so far. But what are the performance implications?
+				- doesn't seem to be any I can find on the internet so far. They cant be too bad if I am already doing this in python. COol, this is the approach.
+			- how will we be able to move the cursors around without Async?
+				- cursors will be virtual, they will be applied at the end artificially
+
+
+	
+	-> less verbose API
+		-> take a look at the code I wrote, and see where my API could improve it
+			- [cursors, ends] = findAll(regex)
+			- cursors = file.toNext(cursors, regex)
+				- file.afterNext(cursors,regex)
+			- cursors = file.toPrev(cursors, regex)
+				- file.beforePrev(cursors,regex)
+			- move(cursors, lines)
+			-* cursors, ends = file.findNext
+				-> findPrev
+			-* file.substrings(starts, ends)
+			-* cursors = file.rangeReplace(cursors, ends, content,  ...cursorsToKeepSynced)
+				[i] most important but also the hardest, and will need the most unit tests
+				[i] rangeDelete can be replace(""), that way replace will be slightly faster than implementin it as delete + insert
+				[i] insert can just be replace(cursors, cursors, content)
+			
+
+			Discussion:
+				Old:
+					for(const match of matches){
+						arr.push(match.index)
+					}			
+					improve to:
+					-* [[starts], [ends]] = file.findAll(regex)
+					
+					function escapeRegExp(text) {
+						return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+					}
+					improve to:
+					-* Make all functions accept string or regex, and behave differently based on which was used. forget abt this function lmao
+
+					-* positions = file.next(positions, str|regex, toEnd?)
+					-* positions = file.prev(positions, regex, toEnd?)
+					-* positions = file.moveLines(positions, num)
+					-* positions = move(positions, num)
+					-* substrings = file.substrings(starts, ends)
+					- strings = strings.map(str => `dasdsds[ + ${str}`); 
+						- already a JavaScript thing
+					
+					-* In theory we can now improve this:
+						for(const match of positions) {
+							let pos = match.index;
+							pos = text.indexOf("label=", pos)
+							let pos1 = text.indexOf("\"", pos+1)
+							let pos2 = text.indexOf("\"", pos1+1)
+
+							let hasPos = text.lastIndexOf("source=\"Has", pos2)
+							hasPos += "source=\"".length;
+							let hasPosEnd = text.indexOf("\"", hasPos+1);
+							let hasVariable = text.substring(hasPos, hasPosEnd);
+
+							inserts.push([pos1, '{']);
+							inserts.push([pos2, `" + formData.${hasVariable} ? "*" : "`]);
+							inserts.push([pos2+1, `}`]);
+							( this part is wrong since we are modifying the string who's matches we are iterating over. The index returned from match.index will no longer be in sync with the file )
+							//text = text.slice(0, pos1) + "{" + text.slice(pos1,pos2) +  + text.slice(pos2+1)
+						}
+						
+						to this:
+						
+						let [cursors, ends] = file.matchAll(/\{\(\{formData\}\)\s?=>/g)
+						
+						// this can part can just be a regex search and replace really.
+						// file.findNext(cursors, /label=("\w+")/).replace("label={\"$1\"})"
+									- which leads to replace previous
+						cursors = file.next(cursors, "label=\"")
+						cursors = file.insert(cursors, "{", starts)
+						cursors = file.nextAfter("\"")
+						cursors = file.insert(cursors, "}")
+						
+						let cursorsHas = file.prev(cursors, "source=\"Has"); // notice that this stops at the end of the find, unlinke lastIndexOf
+						cursorsHas = move(cursorsHas, -3)
+						let endsHas = file.next(cursorsHas, "\"")
+						let hasVars = file.substrings(cursorsHas, endsHas);
+						let conditionalAsterixes = hasVars.map(
+							v =>`" + formData.${v} ? "*" : "`
+						);
+						cursors = file.insertAndMove(cursors, conditionalAsterixes)
+						cursors = file.insert("}");
+					
+						
+						technically the previous code would be more performant, but lower is just faster to write and reason with once you start thinking in that paradigm. and since the performance of running the macro would be barely noticeable, the speedup of writing is worth it. however Both are convoluted to some degree. The second also has the issue of cursors going out of sync after doing an insert. (cursors and ends and starts and whatever are just 0 based indexes from the start of the string, or as we in english like to say, numbers);
+				
+				I think that all of that is overcomplicating the thing. I would like people to still have the option to use for-loops. also, a lot of thigns can just be done with map();
+				like I can ddo 
+				[starts, ends] = file.findAll(/bruh/, 0, -1)
+				and then I can do
+				[starts, ends, groupings] = file.findNext(cursors, /label=("\w+")/)
+				file.rangeReplace(starts,ends, groupings.replace("label={\"$1\"}))
+				damn the code is bad either way
+				I'll think abt it some more later
+
+		

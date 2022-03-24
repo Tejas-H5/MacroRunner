@@ -1,31 +1,15 @@
 const defaultMacro = `// macro
-// Find documentation about the injected objects here: [TODO: add link here once we're finished documenting this]
+// Find documentation about the injected objects here: https://github.com/El-Tejaso/macrorunner
 
-const file = macroContext.getFile();
-// Wrap text in a string for string autocomplete, even though file.text is already a string
-` + 
-"let text = `${file.text}`;" + 
-`
+const file = context.getFile();
+let text = \`\${file.getText()}\`; // autocomplete purposes. I don't know how to inject autocomplete just yet
 
 // Make your modifications here
 
 
-
-file.text = text;
+file.setText(text);
 debug.info("macro completed");
 `
-
-
-
-
-
-const testingMacro = `
-//macro
-
-
-
-`;
-
 
 
 export default defaultMacro;
