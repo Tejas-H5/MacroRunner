@@ -1,0 +1,59 @@
+A way to automate boring tasks in vs-code
+
+- Create newMacro command
+	- It just opens a new untitled javascript document
+- Create a runMacro command
+	- it just evals whatever is currently open, and applies it to the other document that is open.
+	
+- Envision the API
+	- The visual studio editing API is fully ASYNC. This is probably great for performance, but terrible for user-friendlyness. I hate that I have to prefix every line with await, and that if I forget to do this, my code will break. This is not an acceptable solution for beginners.
+		- I could make each function call append to an array of function calls with a function object + arguments
+			- but what if I need to check the state of the document after each modification? can't do it like this
+		- how about a custom edit-builder object that wraps the	
+			- but I ahve hte same problem here as I do before.
+		- ok how about using deasync
+			- but the maintainers of de-async and everyone else says that its a hack and it causes serious problems and I shouldnt use it
+		- Ok so how about I create my own macro language and I interpret it and it translates into async calls udner the hood
+			- too much effort, too high of a learning curve. why should people learn some obscure language that may not even work
+		- Ok so how about all our functions will modify a string synchronously. and then at the end, we simply replace the entire document. This is how our current python approach works anyway.
+			- This sounds like the best option so far. But what are the performance implications?
+				- doesn't seem to be any I can find on the internet so far. They cant be too bad if I am already doing this in python. COol, this is the approach.
+			- how will we be able to move the cursors around without Async?
+				- cursors will be virtual, they will be applied at the end artificially
+
+Create the API:
+	- access and modify text
+		- test
+	-> create new text objects where we can output new stuff
+		-> vscode api text editor edit not possible on closed editors
+			-> How to work around this?
+	-* add some utilities
+		
+		
+	
+	
+for field in fields:
+	ctx.setCursorPos(findNext(`source="${field}"`))
+	ctx.setCursorPos(findNext("<", ctx.cursorPos))
+	ctx.in
+	
+usefull functions:
+	- positionAt, offsetAt
+ 
+Testing:
+ 
+ // macro
+// Find documentation about the injected ctx and debug objects here: [TODO: put the documentation link here]
+
+/**
+ * Name : Unnamed Macro
+ * Author: Someone
+ * Documentation: None yet
+ */
+
+debug.info("test");
+const file = macroContext.getFile();
+
+const file2 = macroContext.newFile();
+file2.text = file.text.replace(/(\w+)/, "''[{[{$1}]}]''")
+ 
