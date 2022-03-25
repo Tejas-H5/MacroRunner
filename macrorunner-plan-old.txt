@@ -22,6 +22,7 @@ A way to automate boring tasks in vs-code
 				- doesn't seem to be any I can find on the internet so far. They cant be too bad if I am already doing this in python. COol, this is the approach.
 			- how will we be able to move the cursors around without Async?
 				- cursors will be virtual, they will be applied at the end artificially
+			
 
 
 	

@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 import DebugContext from "./debugContext";
-import EditableFile, { injectedFunctions } from "./editableFile";
+import { createIntervalTimeoutFunctions } from "./intervalTimeout";
 import MacroContext from "./macroContext";
 import macroTemplate from "./macroTemplate";
-import { replaceAllFile } from "./macroUtil";
+import { replaceAllFile, showErrors } from "./macroUtil";
 import { containsWhileLoop } from "./sourceUtil";
 
 const newMacroCommand = async () => {
@@ -17,15 +17,6 @@ const newMacroCommand = async () => {
         document,
         visibleEditors.length === 1 ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active
     );
-};
-
-const compactStack = (stack: string) => {
-    let earlyCutoff = stack.indexOf("at eval (eval at runMacroCommand");
-    stack = stack.substring(0, earlyCutoff);
-    stack += "\n  <The rest of the stack is internal to the macroRunner codebase and not relevant>";
-    stack = stack.replace(/\w+:.+\\/g, ".../");
-    stack = stack.replace(/\t/g, "    ");
-    return stack;
 };
 
 const runMacroCommand = async () => {
@@ -61,56 +52,59 @@ const runMacroCommand = async () => {
     }
 
     if (containsWhileLoop(code)) {
-        vscode.window.showWarningMessage(
-            "I strongly recommend against using while loops in your code, as this extension has no way to break out infinite loops at the moment. Have task-manager or similar on hand just in case",
+        // wait for the user to close the warning before we proceed
+        await vscode.window.showWarningMessage(
+            `I strongly recommend against using while loops in your code, as this extension has no way to break out infinite loops at the moment. 
+If you aren't very sure that this code won't hang, ready up a Task Manager or command shell to kill this process and then close this popup.`,
             { modal: true }
         );
     }
 
+    // prepare objects to feed to the macro
+    const targetEditorIndex = activeEditor === visibleEditors[0] ? 1 : 0;
+    const targetEditor = visibleEditors[targetEditorIndex];
+    const targetEditorLanguage = targetEditor.document.languageId;
+    const initialDocument = targetEditor.document;
+    const ctx = new MacroContext(targetEditor);
+    const debug = new DebugContext();
+    const timerContainer = createIntervalTimeoutFunctions();
+
+    const allInjectedFunctions = [...timerContainer.functions];
+
     // actually run the macro
-    let targetEditorIndex = activeEditor === visibleEditors[0] ? 1 : 0;
-    let targetEditor = visibleEditors[targetEditorIndex];
-    let targetEditorLanguage = targetEditor.document.languageId;
-
-    let ctx = new MacroContext(targetEditor);
-    let debug = new DebugContext();
-
     try {
         const macroFunction = Function(`
-"use strict";
-return (async (context, debug, ${injectedFunctions.map((o) => o.name).join(",")}) => {
-${code}
-});`)();
-
-        await macroFunction(ctx, debug, ...injectedFunctions);
+            "use strict";
+            return (async (context, debug, ${allInjectedFunctions.map((o) => o.name).join(",")}) => {
+                ${code}
+            });`)();
+        await macroFunction(ctx, debug, ...allInjectedFunctions);
     } catch (e: any) {
-        vscode.window.showErrorMessage("Error: " + e.message, {
-            modal: true,
-            detail: compactStack(e.stack),
-        });
-
-        //vscode.window.showErrorMessage("Error: " + e.message + "\n" + compactStack(e.stack));
+        showErrors(e);
         return;
     }
 
-    // apply all results
-    const newFile = ctx.getFile(0);
-    await replaceAllFile(newFile, targetEditor);
+    // wait for all the async stuff to finish, so that the code there is still able to throw exceptions
+    await timerContainer.joinAll();
 
-    let targetColumn = targetEditor.viewColumn;
-    // create all new files
+    //apply all changes that need to be applied
+
+    // update the current text file if we had any outputs
+    const newFile = ctx.getFile(0);
+
+    if (newFile.getText() !== "") {
+        await replaceAllFile(newFile, initialDocument, targetEditor.viewColumn, true);
+    }
+
+    // create and update all non-empty output files
     for (let i = 1; i < ctx.fileCount(); i++) {
-        // TODO: work around the bug [edit not possible on closed editors], as this doesnt allow for
-        // intermediate states
+        if (ctx.getFile(i).getText() === "") continue;
         let newDocument = await vscode.workspace.openTextDocument({
-            content: " ", //ctx.getFile(i).text,
+            content: "",
             language: targetEditorLanguage,
         });
 
-        visibleEditors = vscode.window.visibleTextEditors;
-        await vscode.window.showTextDocument(newDocument, targetColumn, true).then(async (textEditor) => {
-            await replaceAllFile(ctx.getFile(i), textEditor);
-        });
+        await replaceAllFile(ctx.getFile(i), newDocument, targetEditor.viewColumn, true);
     }
 };
 

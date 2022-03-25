@@ -24,7 +24,10 @@
 		-* Investigate another thread + pthread_kill
 		
 	- a way to push the output while it's running. 
-		-* A way to catch exceptions here would be nice
+		- A way to catch exceptions here would be nice. Looks like it is because the command function had completed, so the link to the debugger was non-existent so no messages could be sent
+			- Inject our own versions of setTimeout, clearTimeout, setInterval, clearInterval. These will keep track of timer IDs and then in visual studio we can await till all of them are null, or can manually clear the IDs if requried.
+			-> test
+		
 			
 	- Some way to get the editor selected regions
 		- getEditorSelection
@@ -35,6 +38,20 @@
 		-* 
 
 -* Breakpoint debugging? could be a VS code functionality
+
+
+Bug tracker
+
+-* Terminals and outputs are being confused for documents
+
+
+
+
+
+
+
+
+
 
 
  
@@ -107,8 +124,7 @@ const count = (x, y) => {
 }
 
 
-context.loop(
-    300,
+loop(
     (counter) => {
         let text = "";
         for (let i = 0; i < size; i++) {
@@ -132,8 +148,8 @@ context.loop(
 
         [board2, board] = [board, board2];
 
-        context.outputTextImmediate();
+        context.outputImmediate();
     },
-    100
+    300, 100
 );
         

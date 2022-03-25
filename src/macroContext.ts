@@ -5,8 +5,9 @@ import { replaceAll, replaceAllFile } from "./macroUtil";
 class MacroContext {
     private editor: vscode.TextEditor;
     private document: vscode.TextDocument;
-    readonly initialSelectedRanges: number[][];
     private files: EditableFile[];
+
+    readonly initialSelectedRanges: number[][];
 
     constructor(editor: vscode.TextEditor) {
         this.document = editor.document;
@@ -33,7 +34,7 @@ class MacroContext {
                     this.fileCount() +
                     " files available"
             );
-            
+
         return this.files[index];
     }
 
@@ -50,35 +51,8 @@ class MacroContext {
     }
 
     // users can await this if they want, but they really don't need to
-    async outputTextImmediate(handle: number = 0) {
-        await replaceAll(this.getFile(handle).getText(), this.editor);
-    }
-
-    loop(interval: number, handler: (n:number) => boolean, count: number|undefined) {
-        let i = 0;
-        let id = setInterval(() => {
-            try {
-                if(count !== undefined && i > count){
-                    clearInterval(id);
-                    return;
-                }
-
-                if (handler(i)) {
-                    clearInterval(id);
-                    return;
-                }
-
-                i++;
-            } catch (error: any) {
-                console.log(error);
-                vscode.window.showErrorMessage("coding error:", {
-                    modal: true,
-                    detail: error,
-                });
-
-                clearInterval(id);
-            } 
-        }, interval);
+    async outputImmediate(handle: number = 0) {
+        replaceAll(this.getFile(handle).getText(), this.document, this.editor.viewColumn, false);
     }
 }
 

@@ -112,9 +112,3 @@ export default class EditableFile {
         return -1;
     }
 }
-
-const move = (cursors: number[], amount: number) => {
-    return cursors.map((i) => i + amount);
-};
-
-export const injectedFunctions: Function[] = [move];
