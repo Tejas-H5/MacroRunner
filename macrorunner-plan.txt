@@ -14,6 +14,10 @@
 		- A way to catch exceptions here would be nice. Looks like it is because the command function had completed, so the link to the debugger was non-existent so no messages could be sent
 			- Inject our own versions of setTimeout, clearTimeout, setInterval, clearInterval. These will keep track of timer IDs and then in visual studio we can await till all of them are null, or can manually clear the IDs if requried.
 
+	-* save, load and delete macro commands
+	
+	-> Change the way we use this program. I want to be able to run this when I have my cursor in the target file. I want the program to search the visible editors for a document with //macro at the top and then run that one. This has the benefits of being able to have more than 2 things open at once, and I can ctrl-tab between all files on that editor and run the macro on all of them
+
 -> write unit tests
 	-* indexAfter, lastIndexAfter
 	-* matchNext

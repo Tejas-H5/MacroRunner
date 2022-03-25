@@ -1,13 +1,12 @@
-## VSCode macro running extension
-Ever had those moments in programming where the only fast way to get something done was to copy the source-file into a new directory and then do some processing on it with a scripting language?
+# macrorunner
+Provides a simple yet powerful API for making edits to the currently active text document with JavaScript. 
 
-This repository aims to provide a super-simple easy to learn and use API for anyone to quickly automate programming tasks that are just painful to do any other way. The extension gives you access to two new commands: 
+## Goal
+While async/await code is more performant, it can be quite cumbersome to write any kind of parsing/generative code. My aim with this extension is to provide an extremely simple programming experience with no use of the async/await paradigm that is for the most part extremely easy to use.
 
-- New Command
-    - This command opens up a new javascript file to the right of whatever you're working on (or if you already have two editors open, it will put it in the other editor). It has some example code that should explain some of the basics, and allow you to write your own macro. There is no autocomplete. That being said, the API is so minimal that I can probably document it all here and you will probably be able to remember it.
-- Run Command
-    - This command will quite literally copy all of the contents of the current javascript file, and then execute it. The new string that you assign to the file object you got from getFile() will replace either whatever was selected in the other editor, or everything.
+## How to use
+Press ctrl+shift+P to open up the command menu, and search for the "New Macro" command. This should pop open a JavaScript file to either the left or the right with a default macro template.
 
-coming soon:
-- Save Command
+(Screenshot)
 
+The file contents are returned as a string. We can perform whatever edits needed to this file, and once the macro completes, the edits should get applied to the other file.
