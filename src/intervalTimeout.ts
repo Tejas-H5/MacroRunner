@@ -13,7 +13,10 @@ export const createIntervalTimeoutFunctions = () => {
         timers: new Array<NodeJS.Timeout>(),
     };
 
-    const setInterval = (callback: (...args: any[]) => void, milliseconds: number | undefined) => {
+    const setInterval = (
+        callback: (...args: any[]) => void,
+        milliseconds: number | undefined = undefined
+    ) => {
         const timeout = setIntervalReal(() => {
             try {
                 callback();
@@ -30,7 +33,10 @@ export const createIntervalTimeoutFunctions = () => {
         timerStore.timers.splice(timerStore.timers.indexOf(timeoutId), 1);
     };
 
-    const setTimeout = (callback: (...args: any[]) => void, milliseconds: number | undefined) => {
+    const setTimeout = (
+        callback: (...args: any[]) => void,
+        milliseconds: number | undefined = undefined
+    ) => {
         const timeout = setTimeoutReal(() => {
             try {
                 callback();
@@ -61,8 +67,8 @@ export const createIntervalTimeoutFunctions = () => {
 
     const loop = (
         callback: (i: number) => boolean,
-        interval: number | undefined,
-        count: number | undefined
+        interval: number | undefined = undefined,
+        count: number | undefined = undefined
     ) => {
         let counter = 0;
         let intervalId = setInterval(() => {

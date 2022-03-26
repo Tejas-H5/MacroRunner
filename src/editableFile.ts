@@ -24,7 +24,7 @@ export default class EditableFile {
         this.intermediateStates.push(this.text);
     }
 
-    matchNext(expr: RegExp | string, position: number) {
+    matchNext(expr: RegExp | string, position: number = 0) {
         expr = new RegExp(expr);
 
         // JS strings are immutable, so this shouldn't allocate anything at all. Right?
@@ -86,15 +86,17 @@ export default class EditableFile {
         );
     }
 
-    indexAfter(str: string, position: number | undefined) {
-        return this.text.indexOf(str, position) + str.length;
+    indexAfter(str: string, position: number = 0) {
+        const pos = this.text.indexOf(str, position);
+        if (pos === -1) return -1;
+        return pos + str.length;
     }
 
-    private reverseStringCompare(str: string, pos: number) {
+    private reverseStringCompare(str: string, pos: number = 0) {
         if (pos + 1 - str.length < 0) return false;
 
         for (let i = 0; i < str.length; i++) {
-            if (this.text[pos - i] !== str[i]) {
+            if (this.text[pos - i] !== str[str.length - 1 - i]) {
                 return false;
             }
         }
@@ -102,12 +104,16 @@ export default class EditableFile {
         return true;
     }
 
-    lastIndexAfter(str: string, position: number) {
+    lastIndexAfter(str: string, position: number = -1) {
+        if (position < 0) {
+            position = this.text.length + position;
+        }
+
         if (str === "") return -1;
 
-        for (let i = position; i > str.length - 1; i--) {
-            if (this.reverseStringCompare(str, position)) {
-                return i;
+        for (let i = position; i >= 0 - 1; i--) {
+            if (this.reverseStringCompare(str, i)) {
+                return i + 1;
             }
         }
 
