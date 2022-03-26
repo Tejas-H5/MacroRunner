@@ -216,6 +216,16 @@ suite("EditableFile", () => {
                     ["3", "4"]
                 );
             });
+
+            assert.throws(() => {
+                file.replace(
+                    [
+                        [0, 1],
+                        [0, 2],
+                    ],
+                    ["3", "4"]
+                );
+            });
         });
 
         test("unordered ranges", () => {

@@ -93,23 +93,39 @@ export default class EditableFile {
         //argsort if strings and ranges are same length, else just normal sort
 
         if (strings.length === ranges.length) {
-            const zippedAndSorted = ranges
-                .map((x, index) => {
-                    const res: [[number | undefined, number], string] = [x, strings[index]];
-                    return res;
-                })
-                .sort((pairA, pairB) => {
-                    const a = pairA[0],
-                        b = pairB[0];
+            let sorted = true;
 
-                    if (a[0] === b[0]) return 0;
-                    if (a[0] === undefined) return -1;
-                    if (b[0] === undefined) return -1;
+            for (let i = 0; i < ranges.length; i++) {
+                if (ranges[i - 1] > ranges[i]) {
+                    sorted = false;
+                }
 
-                    return a[0] - b[0];
-                });
-            ranges = zippedAndSorted.map((x) => x[0]);
-            strings = zippedAndSorted.map((x) => x[1]);
+                if (ranges[i - 1] === ranges[i]) {
+                    throw new Error(
+                        `Range ${i - 1} : ${ranges[i - 1]} overlaps with ${i} : ${ranges[i]}`
+                    );
+                }
+            }
+
+            if (!sorted) {
+                const zippedAndSorted = ranges
+                    .map((x, index) => {
+                        const res: [[number | undefined, number], string] = [x, strings[index]];
+                        return res;
+                    })
+                    .sort((pairA, pairB) => {
+                        const a = pairA[0],
+                            b = pairB[0];
+
+                        if (a[0] === b[0]) return 0;
+                        if (a[0] === undefined) return -1;
+                        if (b[0] === undefined) return -1;
+
+                        return a[0] - b[0];
+                    });
+                ranges = zippedAndSorted.map((x) => x[0]);
+                strings = zippedAndSorted.map((x) => x[1]);
+            }
         } else {
             ranges = ranges.sort((a, b) => {
                 if (a[0] === b[0]) return 0;
