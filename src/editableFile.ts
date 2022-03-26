@@ -36,6 +36,39 @@ export default class EditableFile {
         this.intermediateStates.push(this.text);
     }
 
+    matchAllArray(expr: RegExp | string) {
+        expr = toRegexGlobal(expr);
+        return Array.from(this.text.matchAll(expr));
+    }
+
+    matchAllArrayPositions(expr: RegExp | string) {
+        expr = toRegexGlobal(expr);
+        const matches = this.text.matchAll(expr);
+        let positions: number[] = [];
+
+        for (const match of matches) {
+            if (match.index !== undefined) {
+                positions.push(match.index);
+            }
+        }
+
+        return positions;
+    }
+
+    matchAllArrayRanges(expr: RegExp | string) {
+        expr = toRegexGlobal(expr);
+        const matches = this.text.matchAll(expr);
+        let positions: [number, number][] = [];
+
+        for (const match of matches) {
+            if (match.index !== undefined) {
+                positions.push([match.index, match.index + match.length]);
+            }
+        }
+
+        return positions;
+    }
+
     matchNext(expr: RegExp | string, position: number = 0) {
         expr = toRegexGlobal(expr);
 
@@ -53,15 +86,23 @@ export default class EditableFile {
         return null;
     }
 
-    replace(ranges: number[][], strings: string[]) {
+    // this is a cool function, I should document it sometime
+    replace(ranges: [number | undefined, number][], strings: string[]) {
         // check for overlapping ranges
         ranges = ranges.sort((a, b) => {
+            if (a[0] === b[0]) return 0;
+            if (a[0] === undefined) return -1;
+            if (b[0] === undefined) return -1;
+
             return a[0] - b[0];
         });
 
         for (let i = 1; i < ranges.length; i++) {
+            const rangeStart = ranges[i][0];
+            if (rangeStart === undefined) continue;
+
             // check if previous range extends over current range. (inclusive, exclusive)
-            if (ranges[i - 1][1] > ranges[i][0]) {
+            if (ranges[i - 1][1] > rangeStart) {
                 throw new Error(
                     `Range ${i - 1} : ${ranges[i - 1]} overlaps with ${i} : ${ranges[i]}`
                 );
@@ -71,16 +112,27 @@ export default class EditableFile {
         const stringBuilder: string[] = [];
         let previousIndex = 0;
         let currentDelta = 0;
-        const newRanges = ranges.map((x) => [...x]);
+        const newRanges = new Array<[number, number]>();
+        for (const [start, end] of ranges) {
+            if (start === undefined) {
+                continue;
+            }
+
+            newRanges.push([start, end]);
+        }
+
         for (let i = 0; i < ranges.length; i++) {
             const [start, end] = ranges[i];
+            if (start === undefined) continue;
+            const string = strings[i % strings.length];
+
             stringBuilder.push(this.text.slice(previousIndex, start));
-            stringBuilder.push(strings[i]);
+            stringBuilder.push(string);
             previousIndex = end;
 
-            currentDelta += strings[i].length - (end - start);
             newRanges[i][0] += currentDelta;
-            newRanges[i][1] += currentDelta;
+            newRanges[i][1] = newRanges[i][0] + string.length;
+            currentDelta += string.length - (end - start);
         }
         stringBuilder.push(this.text.slice(previousIndex));
 
@@ -88,14 +140,21 @@ export default class EditableFile {
         return newRanges;
     }
 
-    insert(positions: number[], strings: string[]) {
+    insert(positions: (number | undefined)[], strings: string[]) {
+        let newPositions = new Array<number>();
+        for (const pos of positions) {
+            if (pos === undefined) continue;
+
+            newPositions.push(pos);
+        }
+
         return this.replace(
-            positions.map((x) => [x, x]),
+            newPositions.map((x) => [x, x!]),
             strings
-        );
+        ).map((x) => x[0]);
     }
 
-    remove(ranges: number[][]) {
+    remove(ranges: [number | undefined, number][]) {
         return this.replace(
             ranges,
             ranges.map((x) => "")

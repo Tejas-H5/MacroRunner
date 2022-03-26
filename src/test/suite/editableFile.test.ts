@@ -118,4 +118,116 @@ suite("EditableFile", () => {
             assert.strictEqual(file.getText().indexOf("here"), pos, "5");
         });
     });
+
+    suite("insert", () => {
+        test("simple insert", () => {
+            const file = new EditableFile("");
+            for (let i = 0; i < 10; i++) {
+                file.setText(file.getText() + "a ");
+            }
+
+            const positions = file.matchAllArrayPositions(/a/).map((x) => x + 1);
+
+            let newPositions = file.insert(positions, ["b"]);
+
+            let expectedText = "";
+            for (let i = 0; i < 10; i++) {
+                expectedText += "ab ";
+            }
+
+            assert.strictEqual(file.getText(), expectedText, "wrong text");
+
+            let expectedPositions = [];
+            for (let i = 0; i < positions.length; i++) {
+                expectedPositions.push(1 + i * 3);
+            }
+
+            assert.deepStrictEqual(newPositions, expectedPositions, "wrong offsets");
+        });
+
+        test("simple remove", () => {
+            const file = new EditableFile("");
+            for (let i = 0; i < 10; i++) {
+                file.setText(file.getText() + "a ");
+            }
+
+            const ranges = file.matchAllArrayRanges(/a/);
+            let newPositions = file.remove(ranges);
+
+            let expectedText = "";
+            for (let i = 0; i < 10; i++) {
+                expectedText += " ";
+            }
+
+            assert.strictEqual(file.getText(), expectedText, "wrong text");
+
+            let expectedRanges = [];
+            for (let i = 0; i < ranges.length; i++) {
+                expectedRanges.push([i, i]);
+            }
+
+            assert.deepStrictEqual(newPositions, expectedRanges, "wrong offsets");
+        });
+
+        test("simple replace", () => {
+            const file = new EditableFile("");
+            for (let i = 0; i < 10; i++) {
+                file.setText(file.getText() + "a ");
+            }
+
+            const ranges = file.matchAllArrayRanges(/a/);
+            let newRanges = file.replace(ranges, ["bbb"]);
+
+            let expectedText = "";
+            for (let i = 0; i < 10; i++) {
+                expectedText += "bbb ";
+            }
+
+            assert.strictEqual(file.getText(), expectedText, "wrong text");
+
+            let expectedRanges = [];
+            for (let i = 0; i < ranges.length; i++) {
+                expectedRanges.push([i * 4, i * 4 + 3]);
+            }
+
+            assert.deepStrictEqual(newRanges, expectedRanges, "wrong offsets");
+        });
+
+        test("adjacent ranges", () => {
+            const file = new EditableFile("12");
+            file.replace(
+                [
+                    [0, 1],
+                    [1, 2],
+                ],
+                ["3", "4"]
+            );
+            assert.strictEqual(file.getText(), "34");
+        });
+
+        test("overlapping ranges", () => {
+            const file = new EditableFile("12");
+            assert.throws(() => {
+                file.replace(
+                    [
+                        [0, 2],
+                        [1, 2],
+                    ],
+                    ["3", "4"]
+                );
+            });
+        });
+
+        test("unordered ranges", () => {
+            const file = new EditableFile("12");
+            file.replace(
+                [
+                    [1, 2],
+                    [0, 1],
+                ],
+                ["4", "3"]
+            );
+            assert.strictEqual(file.getText(), "34");
+        });
+    });
 });
