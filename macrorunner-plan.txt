@@ -2,15 +2,16 @@ TODO:
 -> Add features
 	- Create as few new API methods as needed
 		- matchNext
-			-* matchPrev (actually harder than I thought to make it efficient.)
+			-* matchPrev (actually harder than I thought to make it efficient.)	
 	
-	- mitigate infinite loops (yes this happened)
-		-* Investigate javascript new thread + pthread_kill
-
+	
+	-> set selected ranges
+	- rename batchInsert back to insert, and add type checking to overload behaviour
+		- aaaa I dont know how to do this and please the type checker. going to just rename batchX methods to XMany for now
+	
 	-* save, load and delete macro commands
 
 - unit tests:
-
 
 -> do manual tests, create folder for all examples (we cant unit test these easily)
 	-* getEditorSelection
@@ -26,109 +27,6 @@ Bug tracker
 
 
 
-
-
-
-
-
-
-
- 
--------------- test macros
-
-//macro 
-
-
-
-// test loop
-//macro 
-
-const file = context.getFile();
-context.loop(100, () => {
-  file.setText(file.getText() + "a")
-}, 10)
-
-
-
-// test error logging
-
-// macro
-const x = () => {
-  const arr = [1, 2]
-  context.getFile(4)
-  
-}
-x()
-
-
-// GOL test
-
-//macro
-
-const file = context.getFile();
-
-let board = [];
-const size = 50;
-
-for (let i = 0; i < size; i++) {
-    board[i] = []
-    for (let j = 0; j < size; j++) {
-        board[i].push(Math.random() > 0.5 ? " " : "*");
-    }
-}
-
-let board2 = [];
-
-for (let i = 0; i < size; i++) {
-    board2[i] = []
-    for (let j = 0; j < size; j++) {
-        board2[i].push(Math.random() > 0.5 ? " " : "*");
-    }
-}
-
-
-const count = (x, y) => {
-    const res = [
-        board[y-1] && board[y-1][x-1],
-        board[y-1] && board[y-1][x],
-        board[y-1] && board[y-1][x+1],
-        board[y][x-1],
-        board[y][x+1],
-        board[y+1] && board[y+1][x-1],
-        board[y+1] && board[y+1][x],
-        board[y+1] && board[y+1][x+1],
-    ].reduce((prev, curr) => curr && curr !== ' ' ? prev + 1 : prev, 0);
-
-    return res;
-}
-
-
-loop(
-    (counter) => {
-        let text = "";
-        for (let i = 0; i < size; i++) {
-            for (let j = 0; j < size; j++) {
-                let s = count(i, j);
-                if (board[j][i] === " " && s === 3) {
-                    board2[j][i] = s;
-                } else if (board[j][i] !== " " && (s < 2 || s > 3)) {
-                    board2[j][i] = " ";
-                } else {
-                  board2[j][i] = board[j][i];
-                } 
-            }
-        }
-
-        text += board.map(
-            x => x.map(y => y === " " ? "  " : "<>" ).join("")
-        ).join("\n");
-
-        file.setText(text);
-
-        [board2, board] = [board, board2];
-
-        context.outputImmediate();
-    },
-    300, 100
-);
-        
+-> Low priority backlog:
+	- mitigate infinite loops (yes this happened)
+		-* Investigate javascript new thread + pthread_kill

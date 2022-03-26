@@ -119,8 +119,8 @@ suite("EditableFile", () => {
         });
     });
 
-    suite("batchReplace (and co)", () => {
-        test("simple batchInsert", () => {
+    suite("replaceMany (and co)", () => {
+        test("simple insertMany", () => {
             const file = new EditableFile("");
             for (let i = 0; i < 10; i++) {
                 file.setText(file.getText() + "a ");
@@ -128,7 +128,7 @@ suite("EditableFile", () => {
 
             const positions = file.matchAllArrayPositions(/a/).map((x) => x + 1);
 
-            let newPositions = file.batchInsert(positions, ["b"]);
+            let newPositions = file.insertMany(positions, ["b"]);
 
             let expectedText = "";
             for (let i = 0; i < 10; i++) {
@@ -145,14 +145,14 @@ suite("EditableFile", () => {
             assert.deepStrictEqual(newPositions, expectedPositions, "wrong offsets");
         });
 
-        test("simple batchRemove", () => {
+        test("simple removeMany", () => {
             const file = new EditableFile("");
             for (let i = 0; i < 10; i++) {
                 file.setText(file.getText() + "a ");
             }
 
             const ranges = file.matchAllArrayRanges(/a/);
-            let newPositions = file.batchRemove(ranges);
+            let newPositions = file.removeMany(ranges);
 
             let expectedText = "";
             for (let i = 0; i < 10; i++) {
@@ -169,14 +169,14 @@ suite("EditableFile", () => {
             assert.deepStrictEqual(newPositions, expectedRanges, "wrong offsets");
         });
 
-        test("simple batchReplace", () => {
+        test("simple replaceMany", () => {
             const file = new EditableFile("");
             for (let i = 0; i < 10; i++) {
                 file.setText(file.getText() + "a ");
             }
 
             const ranges = file.matchAllArrayRanges(/a/);
-            let newRanges = file.batchReplace(ranges, ["bbb"]);
+            let newRanges = file.replaceMany(ranges, ["bbb"]);
 
             let expectedText = "";
             for (let i = 0; i < 10; i++) {
@@ -195,7 +195,7 @@ suite("EditableFile", () => {
 
         test("adjacent ranges", () => {
             const file = new EditableFile("12");
-            file.batchReplace(
+            file.replaceMany(
                 [
                     [0, 1],
                     [1, 2],
@@ -208,7 +208,7 @@ suite("EditableFile", () => {
         test("overlapping ranges", () => {
             const file = new EditableFile("12");
             assert.throws(() => {
-                file.batchReplace(
+                file.replaceMany(
                     [
                         [0, 2],
                         [1, 2],
@@ -218,7 +218,7 @@ suite("EditableFile", () => {
             });
 
             assert.throws(() => {
-                file.batchReplace(
+                file.replaceMany(
                     [
                         [0, 1],
                         [0, 2],
@@ -230,7 +230,7 @@ suite("EditableFile", () => {
 
         test("unordered ranges", () => {
             const file = new EditableFile("123");
-            file.batchReplace(
+            file.replaceMany(
                 [
                     [2, 3],
                     [0, 1],

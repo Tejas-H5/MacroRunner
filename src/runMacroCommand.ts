@@ -91,6 +91,7 @@ If you aren't very sure that this code won't hang, ready up a Task Manager or co
     const ctx = new MacroContext(targetEditor);
     const debug = new DebugContext();
     const timerContainer = createIntervalTimeoutFunctions();
+    const file = ctx.getFile();
 
     const allInjectedFunctions = [...timerContainer.functions];
 
@@ -98,10 +99,12 @@ If you aren't very sure that this code won't hang, ready up a Task Manager or co
     try {
         const macroFunction = Function(`
           "use strict";
-          return (async (context, debug, ${allInjectedFunctions.map((o) => o.name).join(",")}) => {
+          return (async (file, context, debug, ${allInjectedFunctions
+              .map((o) => o.name)
+              .join(",")}) => {
               ${code}
           });`)();
-        await macroFunction(ctx, debug, ...allInjectedFunctions);
+        await macroFunction(file, ctx, debug, ...allInjectedFunctions);
     } catch (e: any) {
         showErrors(e);
         return;

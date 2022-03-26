@@ -15,10 +15,17 @@ export default class EditableFile {
     private isDebug: boolean;
     intermediateStates: string[];
 
+    newSelectedRanges: [number, number][];
+
     constructor(text: string) {
         this.text = text;
         this.intermediateStates = new Array<string>();
         this.isDebug = false;
+        this.newSelectedRanges = new Array<[number, number]>();
+    }
+
+    setNewSelectedRanges(ranges: [number, number][]) {
+        this.newSelectedRanges = ranges;
     }
 
     setText(newText: string) {
@@ -87,7 +94,7 @@ export default class EditableFile {
     }
 
     // this is a cool function, I should document it sometime
-    batchReplace(ranges: [number | undefined, number][], strings: string[]) {
+    replaceMany(ranges: [number | undefined, number][], strings: string[]) {
         // check for overlapping ranges
 
         //argsort if strings and ranges are same length, else just normal sort
@@ -179,7 +186,7 @@ export default class EditableFile {
         return newRanges;
     }
 
-    batchInsert(positions: (number | undefined)[], strings: string[]) {
+    insertMany(positions: (number | undefined)[], strings: string[]) {
         let newPositions = new Array<number>();
         for (const pos of positions) {
             if (pos === undefined) continue;
@@ -187,14 +194,14 @@ export default class EditableFile {
             newPositions.push(pos);
         }
 
-        return this.batchReplace(
+        return this.replaceMany(
             newPositions.map((x) => [x, x!]),
             strings
         ).map((x) => x[0]);
     }
 
-    batchRemove(ranges: [number | undefined, number][]) {
-        return this.batchReplace(
+    removeMany(ranges: [number | undefined, number][]) {
+        return this.replaceMany(
             ranges,
             ranges.map((x) => "")
         );
