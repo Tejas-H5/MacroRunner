@@ -1,3 +1,15 @@
+const toRegexGlobal = (expr: string | RegExp) => {
+    if (expr instanceof RegExp) {
+        let flags = expr.flags;
+        if (flags.indexOf("g") === -1) {
+            flags += "g";
+        }
+        return new RegExp(expr, flags);
+    } else {
+        return new RegExp(expr, "g");
+    }
+};
+
 export default class EditableFile {
     private text: string;
     private isDebug: boolean;
@@ -25,12 +37,16 @@ export default class EditableFile {
     }
 
     matchNext(expr: RegExp | string, position: number = 0) {
-        expr = new RegExp(expr);
+        expr = toRegexGlobal(expr);
 
         // JS strings are immutable, so this shouldn't allocate anything at all. Right?
         const substr = this.text.substring(position);
         const matches = substr.matchAll(expr);
         for (const match of matches) {
+            if (match && match.index !== undefined) {
+                match.index += position;
+            }
+
             return match;
         }
 

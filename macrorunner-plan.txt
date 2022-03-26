@@ -10,8 +10,6 @@ TODO:
 	-* save, load and delete macro commands
 
 -> write unit tests
-	-* indexAfter, lastIndexAfter
-	-* matchNext
 	-* batch replace, insert, delete
 	-* containsWhileLoop
 	-* setInterval error handling
