@@ -219,15 +219,17 @@ suite("EditableFile", () => {
         });
 
         test("unordered ranges", () => {
-            const file = new EditableFile("12");
+            const file = new EditableFile("123");
             file.replace(
                 [
-                    [1, 2],
+                    [2, 3],
                     [0, 1],
+                    [1, 2],
                 ],
-                ["4", "3"]
+                ["5", "3", "4"]
             );
-            assert.strictEqual(file.getText(), "34");
+
+            assert.strictEqual(file.getText(), "345");
         });
     });
 });

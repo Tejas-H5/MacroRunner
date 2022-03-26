@@ -89,13 +89,36 @@ export default class EditableFile {
     // this is a cool function, I should document it sometime
     replace(ranges: [number | undefined, number][], strings: string[]) {
         // check for overlapping ranges
-        ranges = ranges.sort((a, b) => {
-            if (a[0] === b[0]) return 0;
-            if (a[0] === undefined) return -1;
-            if (b[0] === undefined) return -1;
 
-            return a[0] - b[0];
-        });
+        //argsort if strings and ranges are same length, else just normal sort
+
+        if (strings.length === ranges.length) {
+            const zippedAndSorted = ranges
+                .map((x, index) => {
+                    const res: [[number | undefined, number], string] = [x, strings[index]];
+                    return res;
+                })
+                .sort((pairA, pairB) => {
+                    const a = pairA[0],
+                        b = pairB[0];
+
+                    if (a[0] === b[0]) return 0;
+                    if (a[0] === undefined) return -1;
+                    if (b[0] === undefined) return -1;
+
+                    return a[0] - b[0];
+                });
+            ranges = zippedAndSorted.map((x) => x[0]);
+            strings = zippedAndSorted.map((x) => x[1]);
+        } else {
+            ranges = ranges.sort((a, b) => {
+                if (a[0] === b[0]) return 0;
+                if (a[0] === undefined) return -1;
+                if (b[0] === undefined) return -1;
+
+                return a[0] - b[0];
+            });
+        }
 
         for (let i = 1; i < ranges.length; i++) {
             const rangeStart = ranges[i][0];
