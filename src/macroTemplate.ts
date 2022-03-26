@@ -9,7 +9,6 @@ let text = \`\${file.getText()}\`; // autocomplete purposes. I don't know how to
 
 file.setText(text);
 debug.info("macro completed");
-`
-
+`;
 
 export default defaultMacro;

@@ -18,8 +18,12 @@ const newMacroCommand = async () => {
 export function activate(context: vscode.ExtensionContext) {
     console.log("Macro runner extension is now active!");
 
-    context.subscriptions.push(vscode.commands.registerCommand("macrorunner.newMacro", newMacroCommand));
-    context.subscriptions.push(vscode.commands.registerCommand("macrorunner.runMacro", runMacroCommand));
+    context.subscriptions.push(
+        vscode.commands.registerCommand("macrorunner.newMacro", newMacroCommand)
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand("macrorunner.runMacro", runMacroCommand)
+    );
 }
 
 export function deactivate() {}

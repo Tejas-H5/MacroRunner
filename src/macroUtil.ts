@@ -7,21 +7,23 @@ export const replaceAll = async (
     targetColumn: number | undefined,
     undo: boolean
 ) => {
-    await vscode.window.showTextDocument(document, targetColumn, true).then(async (targetEditor) => {
-        await targetEditor.edit(
-            (edit) => {
-                const all = new vscode.Range(
-                    new vscode.Position(0, 0),
-                    targetEditor.document.positionAt(targetEditor.document.getText().length)
-                );
-                edit.replace(all, text);
-            },
-            {
-                undoStopBefore: undo,
-                undoStopAfter: undo,
-            }
-        );
-    });
+    await vscode.window
+        .showTextDocument(document, targetColumn, true)
+        .then(async (targetEditor) => {
+            await targetEditor.edit(
+                (edit) => {
+                    const all = new vscode.Range(
+                        new vscode.Position(0, 0),
+                        targetEditor.document.positionAt(targetEditor.document.getText().length)
+                    );
+                    edit.replace(all, text);
+                },
+                {
+                    undoStopBefore: undo,
+                    undoStopAfter: undo,
+                }
+            );
+        });
 };
 
 export const replaceAllFile = async (

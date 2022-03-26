@@ -1,4 +1,4 @@
-Anything i feel is cluttering macrorunner-plan I throw in here
+Anything I feel is cluttering macrorunner-plan or is finished I throw in here
 ---------------------------------------------------------
 A way to automate boring tasks in vs-code
 
@@ -119,3 +119,15 @@ A way to automate boring tasks in vs-code
 				I'll think abt it some more later
 
 		
+- Change the way we use this program. I want to be able to run this when I have my cursor in the target file. I want the program to search the visible editors for a document with //macro at the top and then run that one. This has the benefits of being able to have more than 2 things open at once, and I can ctrl-tab between all files on that editor and run the macro on all of them
+
+- a way to push the output while it's running. would be fun I think
+	- A way to catch exceptions here would be nice. Looks like it is because the command function had completed, so the link to the debugger was non-existent so no messages could be sent
+		- Inject our own versions of setTimeout, clearTimeout, setInterval, clearInterval. These will keep track of timer IDs and then in visual studio we can await till all of them are null, or can manually clear the IDs if requried.
+			[done]
+
+
+
+- mitigate infinite loops (yes this happened)
+	- nothing can be done about them. I will make the program print a warning if it detects the word "while\(.+\)" somewhere in the code, and how they should start up task manager and end visual studio since there is no other known way to mitgate against them. I've also added some more code to make it a little smart, like regex that removes single/multiline comments, "'` strings and /regex/ objects before doing the check, but yeah
+		[or can it?]

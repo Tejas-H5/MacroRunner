@@ -1,5 +1,5 @@
 {
-  "name": "macrorunner",
+	"name": "macrorunner",
 	"displayName": "MacroRunner",
 	"description": "An extension that allows you to automate repetitive tasks with code",
 	"version": "0.0.1",
@@ -10,7 +10,7 @@
 		"Other"
 	],
 	"activationEvents": [
-        "onCommand:macrorunner.runMacro",
+		"onCommand:macrorunner.runMacro",
 		"onCommand:macrorunner.newMacro"
 	],
 	"main": "./out/extension.js",
@@ -19,7 +19,7 @@
 			{
 				"command": "macrorunner.runMacro",
 				"title": "Macro runner: Run macro"
-			}, 
+			},
 			{
 				"command": "macrorunner.newMacro",
 				"title": "Macro runner: New macro"

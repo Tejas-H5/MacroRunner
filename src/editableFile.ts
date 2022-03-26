@@ -46,7 +46,9 @@ export default class EditableFile {
         for (let i = 1; i < ranges.length; i++) {
             // check if previous range extends over current range. (inclusive, exclusive)
             if (ranges[i - 1][1] > ranges[i][0]) {
-                throw new Error(`Range ${i - 1} : ${ranges[i - 1]} overlaps with ${i} : ${ranges[i]}`);
+                throw new Error(
+                    `Range ${i - 1} : ${ranges[i - 1]} overlaps with ${i} : ${ranges[i]}`
+                );
             }
         }
 

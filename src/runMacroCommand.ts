@@ -26,7 +26,10 @@ const getEditorWithMacroFile = () => {
     let visibleEditors = vscode.window.visibleTextEditors;
     let macroEditors = visibleEditors.filter((editor) => {
         const code = editor.document.getText();
-        const containsSafetyCatch = code.substring(0, code.indexOf("\n")).toLowerCase().includes("macro");
+        const containsSafetyCatch = code
+            .substring(0, code.indexOf("\n"))
+            .toLowerCase()
+            .includes("macro");
         return containsSafetyCatch;
     });
 
@@ -37,7 +40,9 @@ const getEditorWithMacroFile = () => {
     }
 
     if (macroEditors.length > 1) {
-        throw new Error("Found multiple macros, make sure that only the macro you want to run is visible.");
+        throw new Error(
+            "Found multiple macros, make sure that only the macro you want to run is visible."
+        );
     }
 
     // sometimes copy-pasted macro code can resolve to c/c++
