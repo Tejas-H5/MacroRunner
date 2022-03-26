@@ -10,7 +10,6 @@ TODO:
 	-* save, load and delete macro commands
 
 -> write unit tests
-	-* batch replace, insert, delete
 	-* containsWhileLoop
 	-* setInterval error handling
 	-* setTimeout error handling
