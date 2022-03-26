@@ -87,7 +87,7 @@ export default class EditableFile {
     }
 
     // this is a cool function, I should document it sometime
-    replace(ranges: [number | undefined, number][], strings: string[]) {
+    batchReplace(ranges: [number | undefined, number][], strings: string[]) {
         // check for overlapping ranges
 
         //argsort if strings and ranges are same length, else just normal sort
@@ -179,7 +179,7 @@ export default class EditableFile {
         return newRanges;
     }
 
-    insert(positions: (number | undefined)[], strings: string[]) {
+    batchInsert(positions: (number | undefined)[], strings: string[]) {
         let newPositions = new Array<number>();
         for (const pos of positions) {
             if (pos === undefined) continue;
@@ -187,14 +187,14 @@ export default class EditableFile {
             newPositions.push(pos);
         }
 
-        return this.replace(
+        return this.batchReplace(
             newPositions.map((x) => [x, x!]),
             strings
         ).map((x) => x[0]);
     }
 
-    remove(ranges: [number | undefined, number][]) {
-        return this.replace(
+    batchRemove(ranges: [number | undefined, number][]) {
+        return this.batchReplace(
             ranges,
             ranges.map((x) => "")
         );
@@ -204,6 +204,18 @@ export default class EditableFile {
         const pos = this.text.indexOf(str, position);
         if (pos === -1) return -1;
         return pos + str.length;
+    }
+
+    remove(start: number, end: number) {
+        this.replace("", start, end);
+    }
+
+    insert(str: string, position: number) {
+        this.replace(str, position, position);
+    }
+
+    replace(str: string, start: number, end: number) {
+        this.text = this.text.substring(0, start) + str + this.text.substring(end);
     }
 
     private reverseStringCompare(str: string, pos: number = 0) {

@@ -9,15 +9,12 @@ TODO:
 
 	-* save, load and delete macro commands
 
--> write unit tests
-	-* containsWhileLoop
-	-* setInterval error handling
-	-* setTimeout error handling
+- unit tests:
 
 
 -> do manual tests, create folder for all examples (we cant unit test these easily)
 	-* getEditorSelection
-	-* 
+	-* setTimeout error handling
 
 -> write documentation 
 	- 
