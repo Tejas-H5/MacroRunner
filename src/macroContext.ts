@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import EditableFile from "./editableFile";
 import { replaceAll, replaceAllFile } from "./macroUtil";
+import { assertType } from "./sourceUtil";
 
 class MacroContext {
     private editor: vscode.TextEditor;
@@ -22,13 +23,17 @@ class MacroContext {
         this.initialSelectedPositions = this.initialSelectedRanges.map((x) => x[0]);
     }
 
-    newFile(text = "") {
+    newFile(text: any = "") {
+        assertType(text, "string");
+
         const newFile = new EditableFile(text);
         this.files.push(newFile);
         return newFile;
     }
 
-    getFile(index = 0) {
+    getFile(index: any = 0) {
+        assertType(index, "number");
+
         if (index < 0 || index >= this.files.length)
             throw new Error(
                 "Index " +
@@ -49,13 +54,17 @@ class MacroContext {
         this.files = [this.files[0]];
     }
 
-    removeFile(handle: number) {
-        return this.files.splice(handle, 1);
+    removeFile(index: any) {
+        assertType(index, "number");
+
+        return this.files.splice(index, 1);
     }
 
     // users can await this if they want, but they really don't need to
-    async outputImmediate(handle: number = 0) {
-        replaceAll(this.getFile(handle).getText(), this.document, this.editor.viewColumn, false);
+    async outputImmediate(index: number = 0) {
+        assertType(index, "number");
+
+        replaceAll(this.getFile(index).getText(), this.document, this.editor.viewColumn, false);
     }
 }
 

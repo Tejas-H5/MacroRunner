@@ -1,6 +1,11 @@
 TODO:
 -> Add features
-	-> write documentation
+	- write documentation
+		- ctx
+			- EditableFile
+		- debug
+		- timerContainer
+
 	
 	- Create as few new API methods as needed
 		- matchNext
@@ -16,15 +21,8 @@ TODO:
 	-* setTimeout error handling
 
 
-
-Bug tracker
-
--* Terminals and outputs are being confused for documents
-
-
-
-
 -> Low priority backlog:
 	- mitigate infinite loops (yes this happened)
 		-* Investigate javascript new thread + pthread_kill
 			( any PRers ? )
+	-* keyboard input

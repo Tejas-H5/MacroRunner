@@ -13,3 +13,8 @@ export const containsWhileLoop = (src: string) => {
     // do we still have while(something) in our code?
     return !!src.match(/[^\S]while\(.+\)/s);
 };
+
+export const assertType = (object: any, type: string) => {
+    if (typeof object !== type)
+        throw new Error(object.name ? object.name : object + " should be of type " + type);
+};

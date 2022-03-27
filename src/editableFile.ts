@@ -1,18 +1,19 @@
-const toRegexGlobal = (expr: string | RegExp) => {
+const toRegexGlobal = (expr: any) => {
     if (expr instanceof RegExp) {
         let flags = expr.flags;
         if (flags.indexOf("g") === -1) {
             flags += "g";
         }
         return new RegExp(expr, flags);
-    } else {
+    } else if (typeof expr === "string" || String instanceof expr) {
         return new RegExp(expr, "g");
     }
+
+    throw new Error(expr.toString() + " isn't a regex or string.");
 };
 
 export default class EditableFile {
     private text: string;
-    private isDebug: boolean;
     intermediateStates: string[];
 
     newSelectedRanges: [number, number][];
@@ -20,15 +21,20 @@ export default class EditableFile {
     constructor(text: string) {
         this.text = text;
         this.intermediateStates = new Array<string>();
-        this.isDebug = false;
         this.newSelectedRanges = new Array<[number, number]>();
     }
 
-    setText(newText: string) {
-        if (this.isDebug) {
-            this.markUndoPoint();
+    setText(newText: any) {
+        let text: string;
+        if (newText instanceof String) {
+            text = `${newText}`;
+        } else if (typeof newText === "string") {
+            text = newText;
+        } else {
+            throw new Error("newText is not a string, it is a " + typeof newText);
         }
-        this.text = newText;
+
+        this.text = text;
     }
 
     getText() {
@@ -203,12 +209,6 @@ export default class EditableFile {
         );
     }
 
-    indexAfter(str: string, position: number = 0) {
-        const pos = this.text.indexOf(str, position);
-        if (pos === -1) return -1;
-        return pos + str.length;
-    }
-
     remove(start: number, end: number) {
         this.replace("", start, end);
     }
@@ -231,6 +231,12 @@ export default class EditableFile {
         }
 
         return true;
+    }
+
+    indexAfter(str: string, position: number = 0) {
+        const pos = this.text.indexOf(str, position);
+        if (pos === -1) return -1;
+        return pos + str.length;
     }
 
     lastIndexAfter(str: string, position: number = -1) {

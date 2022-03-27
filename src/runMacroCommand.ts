@@ -90,7 +90,6 @@ If you aren't very sure that this code won't hang, ready up a Task Manager or co
     const ctx = new MacroContext(targetEditor);
     const debug = new DebugContext();
     const timerContainer = createIntervalTimeoutFunctions();
-
     const allInjectedFunctions = [...timerContainer.functions];
 
     // actually run the macro

@@ -7,12 +7,12 @@ class DebugContext {
         console.log(...messages);
     }
 
-    async info(message: any, ...items: any[]) {
-        await vscode.window.showInformationMessage(`${message}`, ...items.map((item) => `${item}`));
+    async info(message: any) {
+        await vscode.window.showInformationMessage(`${message}`);
     }
 
-    async error(message: any, ...items: any[]) {
-        await vscode.window.showErrorMessage(`${message}`, ...items.map((item) => `${item}`));
+    async error(message: any) {
+        await vscode.window.showErrorMessage(`${message}`);
     }
 }
 
