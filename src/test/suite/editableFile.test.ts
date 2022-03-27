@@ -126,7 +126,7 @@ suite("EditableFile", () => {
                 file.setText(file.getText() + "a ");
             }
 
-            const positions = file.matchAllArrayPositions(/a/).map((x) => x + 1);
+            const positions = file.matchAllPositions(/a/).map((x) => x + 1);
 
             let newPositions = file.insertMany(positions, ["b"]);
 
@@ -151,7 +151,7 @@ suite("EditableFile", () => {
                 file.setText(file.getText() + "a ");
             }
 
-            const ranges = file.matchAllArrayRanges(/a/);
+            const ranges = file.matchAllRanges(/a/);
             let newPositions = file.removeMany(ranges);
 
             let expectedText = "";
@@ -175,7 +175,7 @@ suite("EditableFile", () => {
                 file.setText(file.getText() + "a ");
             }
 
-            const ranges = file.matchAllArrayRanges(/a/);
+            const ranges = file.matchAllRanges(/a/);
             let newRanges = file.replaceMany(ranges, ["bbb"]);
 
             let expectedText = "";

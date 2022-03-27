@@ -24,10 +24,6 @@ export default class EditableFile {
         this.newSelectedRanges = new Array<[number, number]>();
     }
 
-    setNewSelectedRanges(ranges: [number, number][]) {
-        this.newSelectedRanges = ranges;
-    }
-
     setText(newText: string) {
         if (this.isDebug) {
             this.markUndoPoint();
@@ -48,7 +44,7 @@ export default class EditableFile {
         return Array.from(this.text.matchAll(expr));
     }
 
-    matchAllArrayPositions(expr: RegExp | string) {
+    matchAllPositions(expr: RegExp | string) {
         expr = toRegexGlobal(expr);
         const matches = this.text.matchAll(expr);
         let positions: number[] = [];
@@ -62,18 +58,18 @@ export default class EditableFile {
         return positions;
     }
 
-    matchAllArrayRanges(expr: RegExp | string) {
+    matchAllRanges(expr: RegExp | string) {
         expr = toRegexGlobal(expr);
         const matches = this.text.matchAll(expr);
-        let positions: [number, number][] = [];
+        let ranges: [number, number][] = [];
 
         for (const match of matches) {
             if (match.index !== undefined) {
-                positions.push([match.index, match.index + match.length]);
+                ranges.push([match.index, match.index + match[0].length]);
             }
         }
 
-        return positions;
+        return ranges;
     }
 
     matchNext(expr: RegExp | string, position: number = 0) {

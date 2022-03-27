@@ -117,20 +117,30 @@ const applyMacroContextResult = async (ctx: MacroContext, targetEditor: vscode.T
     // update the current text file if we had any outputs
     const targetEditorLanguage = targetEditor.document.languageId;
     const initialDocument = targetEditor.document;
-    const newFile = ctx.getFile(0);
-
-    if (newFile.getText() !== "") {
-        await replaceAllFile(newFile, initialDocument, targetEditor.viewColumn, true);
-    }
 
     // create and update all non-empty output files
-    for (let i = 1; i < ctx.fileCount(); i++) {
+    for (let i = 0; i < ctx.fileCount(); i++) {
         if (ctx.getFile(i).getText() === "") continue;
-        let newDocument = await vscode.workspace.openTextDocument({
-            content: "",
-            language: targetEditorLanguage,
-        });
 
-        await replaceAllFile(ctx.getFile(i), newDocument, targetEditor.viewColumn, true);
+        let document: vscode.TextDocument;
+        if (i === 0) {
+            document = initialDocument;
+        } else {
+            document = await vscode.workspace.openTextDocument({
+                content: "",
+                language: targetEditorLanguage,
+            });
+        }
+
+        const changes = ctx.getFile(i);
+        await replaceAllFile(changes, document, targetEditor.viewColumn, true);
+
+        const selections = changes.newSelectedRanges.map((range) => {
+            return new vscode.Selection(
+                document.positionAt(range[0]),
+                document.positionAt(range[1])
+            );
+        });
+        targetEditor.selections = selections;
     }
 };

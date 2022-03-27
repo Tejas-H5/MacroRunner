@@ -1,16 +1,13 @@
 TODO:
 -> Add features
+	-> write documentation
+	
 	- Create as few new API methods as needed
 		- matchNext
 			-* matchPrev (actually harder than I thought to make it efficient.)	
 	
-	
-	-> set selected ranges
 	- rename batchInsert back to insert, and add type checking to overload behaviour
 		- aaaa I dont know how to do this and please the type checker. going to just rename batchX methods to XMany for now
-	
-	- load, save, remove macro commands
-		-* test
 
 - unit tests to write:
 	
@@ -18,8 +15,7 @@ TODO:
 -> do manual tests, create folder for all examples (we cant unit test these easily)
 	-* setTimeout error handling
 
--> write documentation 
-	- 
+
 
 Bug tracker
 

@@ -114,32 +114,52 @@ export const removeMacroCommand = async () => {
     }
 };
 
-const defaultMacro = `// macro
-// Find documentation about the injected objects here: https://github.com/El-Tejaso/macrorunner
+const defaultMacro = `// macro 
+// read documentation for injected objects like 'file', 'context', etc on the extension page
 
 const file = context.getFile();
-let text = \`\${file.getText()}\`; // autocomplete purposes. I don't know how to inject autocomplete just yet
+let text = "" + file.getText();  // a hacky way to get autocomplete
 
-// Make your modifications here
-
+#cursor
 
 file.setText(text);
-debug.info("macro completed");
 `;
 
-const showDocument = async (document: vscode.TextDocument) => {
+const showDocument = async (
+    document: vscode.TextDocument,
+    cursorIndex: number | undefined = undefined
+) => {
     let visibleEditors = vscode.window.visibleTextEditors;
-    await vscode.window.showTextDocument(
-        document,
-        visibleEditors.length === 1 ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active
-    );
+    await vscode.window
+        .showTextDocument(
+            document,
+            visibleEditors.length === 1 ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active
+        )
+        .then((editor) => {
+            if (cursorIndex === undefined) {
+                cursorIndex = editor.document.getText().length - 1;
+            }
+
+            editor.selection = new vscode.Selection(
+                editor.document.positionAt(cursorIndex),
+                editor.document.positionAt(cursorIndex)
+            );
+        });
 };
 
 export const newMacroCommand = async () => {
+    let text = defaultMacro;
+    let selIndex = text.indexOf("#cursor");
+    if (selIndex === -1) {
+        selIndex = text.length - 1;
+    } else {
+        text = text.replace("#cursor", "");
+    }
+
     let document = await vscode.workspace.openTextDocument({
-        content: defaultMacro,
+        content: text,
         language: "javascript",
     });
 
-    await showDocument(document);
+    showDocument(document, selIndex);
 };
