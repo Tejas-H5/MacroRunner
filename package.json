@@ -11,7 +11,10 @@
 	],
 	"activationEvents": [
 		"onCommand:macrorunner.runMacro",
-		"onCommand:macrorunner.newMacro"
+		"onCommand:macrorunner.newMacro",
+		"onCommand:macrorunner.loadMacro",
+		"onCommand:macrorunner.saveMacro",
+		"onCommand:macrorunner.removeMacro"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -23,6 +26,18 @@
 			{
 				"command": "macrorunner.newMacro",
 				"title": "Macro runner: New macro"
+			},
+			{
+				"command": "macrorunner.loadMacro",
+				"title": "Macro runner: Load macro"
+			},
+			{
+				"command": "macrorunner.saveMacro",
+				"title": "Macro runner: Save macro"
+			},
+			{
+				"command": "macrorunner.removeMacro",
+				"title": "Macro runner: Remove macro"
 			}
 		]
 	},

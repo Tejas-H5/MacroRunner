@@ -9,12 +9,13 @@ TODO:
 	- rename batchInsert back to insert, and add type checking to overload behaviour
 		- aaaa I dont know how to do this and please the type checker. going to just rename batchX methods to XMany for now
 	
-	-* save, load and delete macro commands
+	- load, save, remove macro commands
+		-* test
 
-- unit tests:
+- unit tests to write:
+	
 
 -> do manual tests, create folder for all examples (we cant unit test these easily)
-	-* getEditorSelection
 	-* setTimeout error handling
 
 -> write documentation 
@@ -30,3 +31,4 @@ Bug tracker
 -> Low priority backlog:
 	- mitigate infinite loops (yes this happened)
 		-* Investigate javascript new thread + pthread_kill
+			( any PRers ? )
