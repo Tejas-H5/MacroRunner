@@ -1,6 +1,7 @@
 import { TextEncoder } from "util";
 import * as vscode from "vscode";
 import { macrosUri } from "./extension";
+import { replaceAll } from "./macroUtil";
 import { getEditorWithMacroFile } from "./runMacroCommand";
 
 const ensureMacrosDir = async () => {
@@ -45,7 +46,8 @@ export const saveMacroCommand = async () => {
     }
 
     try {
-        const macroEditorDocument = getEditorWithMacroFile().document;
+        const macroEditor = getEditorWithMacroFile();
+        const macroEditorDocument = macroEditor.document;
 
         const input = await vscode.window.showInputBox({
             title: "Name this macro:",
@@ -57,19 +59,33 @@ export const saveMacroCommand = async () => {
             fileName += ".js";
         }
 
+        // no clean way to save-as, so we are going to write a new file,
+        // close the existing one, then load the file we just wrote
         const text = macroEditorDocument.getText();
         const filepath = vscode.Uri.joinPath(dir, fileName);
         const enc = new TextEncoder();
-        vscode.workspace.fs.writeFile(filepath, enc.encode(text));
+
+        await vscode.workspace.fs.writeFile(filepath, enc.encode(text));
+
+        await vscode.window
+            .showTextDocument(macroEditorDocument, macroEditor.viewColumn)
+            .then(async (editor) => {
+                if (macroEditorDocument.isUntitled) {
+                    // no clean way to close an untitled document, so we are just going to
+                    // replace with nothing so that we don't get the option to save the document
+                    await replaceAll("", editor.document, editor.viewColumn, false).then(() => {
+                        vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+                    });
+                }
+
+                await loadMacro(fileName);
+            });
     } catch (err: any) {
         vscode.window.showErrorMessage(err.message);
     }
 };
 
-export const loadMacroCommand = async () => {
-    const input = await pickExistingMacro("pick a macro to load");
-    if (input === undefined) return;
-
+const loadMacro = async (input: string) => {
     const dir = macrosUri;
     if (dir === null) return;
 
@@ -80,6 +96,13 @@ export const loadMacroCommand = async () => {
     } catch (err: any) {
         vscode.window.showErrorMessage(err.message);
     }
+};
+
+export const loadMacroCommand = async () => {
+    const input = await pickExistingMacro("pick a macro to load");
+    if (input === undefined) return;
+
+    await loadMacro(input);
 };
 
 export const removeMacroCommand = async () => {
