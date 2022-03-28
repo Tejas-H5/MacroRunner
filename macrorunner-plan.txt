@@ -6,6 +6,11 @@ TODO:
 		- debug
 		- timerContainer
 		-> improve docs
+		
+	-> files.walk(dir)
+
+
+	-* Mitigate stack-overflows
 
 	- save behaviour needs to switch to the saved version of the file
 	

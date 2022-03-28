@@ -8,8 +8,7 @@ class MacroContext {
     private document: vscode.TextDocument;
     private files: EditableFile[];
 
-    readonly initialSelectedRanges: number[][];
-    readonly initialSelectedPositions: number[];
+    readonly initialSelectedRanges: [number, number][];
 
     constructor(editor: vscode.TextEditor) {
         this.document = editor.document;
@@ -19,8 +18,6 @@ class MacroContext {
             this.document.offsetAt(s.start),
             this.document.offsetAt(s.end),
         ]);
-
-        this.initialSelectedPositions = this.initialSelectedRanges.map((x) => x[0]);
     }
 
     newFile(text: any = "") {

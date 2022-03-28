@@ -1,81 +1,92 @@
+
 # MacroRunner
-Allows you to use JavaScript to programmatically edit a text document as simply and quickly as possible. The API is designed to be as simple and easy to use as possible, and 
+Allows you to use JavaScript to automate the editing of text documents, and is designed to be as simple to use as possible. Extremely useful to automate some simple text editing tasks that are hard to quickly do using the existing visual studio commands.
 
-# The bare minimum knowledge
+Use the `MacroRunner: New Macro` command from the `Ctrl+Shift+P` menu to create a new macro. The default macro template will open in a text editor to the side of whatever you're editing. 
 
-Use the `New Script` command to create a new script. It opens up to the side of whatever you're editing as a javascript file. Write your script like this:
+Write your macro in this editor. For example, here is a simple script that increments all the chars in a document by 1:
 
 ```javascript
-// script
+// macro
 
 const file = context.getFile();
 
-file.insertMany(context.initialSelectedPositions, "new text");
+const cipherOffset = 1;
+const stringBuilder = []
 
-file.setText(
-    file.text + 
-    "\n\n" +
-    "This file was modified at " + new Date().toISOString()
-);
+for(let i = 0; i < file.text.length; i++) {
+    stringBuilder.push(String.fromCharCode(file.text.charCodeAt(i) + cipherOffset));
+}
+
+file.setText(stringBuilder.join(""));
 ```
 
-And then run your script with the `Run Script` command. This is all you really need to know, but the API offers some more functionality that you can read about in the following sections.
+When your macro is ready, run it with the `MacroRunner: Run macro` command. This command will attempt to find a visible editor with text that starts with '// macro', and then run that text as JavaScript code that will have access to text in the target document. If exactly two editors are open, then the editor that didn't have the macro in it is the tarteg. If more than two are open, then the document that currently has focus will be the target document. <b> !!! This extension makes no effort to validate the security of the code in a macro, as it assumes you are writing the code yourself. Only copy-paste and run macros from the internet if you know for sure that don't have malicious code in them. !!! </b>
 
-# How to use
+Use the `MacroRunner: Save macro` command to save this macro to global storage for later, and then re-open this macro again whenever you want with the `MacroRunner: Load macro` command. The `MacroRunner: Delete macro` and `MacroRunner: Open macros directory` commands also exist, do exactly what you think they do.
 
-This extension adds 5 new commands to VS-Code that you can access via the command menu (`Ctrl + Shift + P`) which are used to create, run, save, load and delete scripts.
+# Other use cases
+
+Sometimes you may want to do a bunch of processing on a document, and then output those results to a new document. You can do something like this:
+
+```javascript
+const file = context.getFile();
+
+// do some processing on the file
+const result = someProcessingOnTheFile(file.text);
+
+const output = context.newFile();
+output.setText(result);
 ```
-Script Runner: New Script
-Script Runner: Run Script
-Script Runner: Save Script
-Script Runner: Load Script
-Script Runner: Remove Script
+
+This will create a new file with `result` as it's contents.
+
+It is also possible to make changes to a document based on the current cursor positions or selections, and to set new cursor positions/selections.
+
+Some basic text based animation is also supported, although not the main focus. Take a look at the `GOL.js` examples in the `examples` folder, and then read the documentation on `context.outputImmediate` and `loop` to understand how it works under the hood.
+
+# Possible additional features
+
+- The ability to select a document from the editor by name
+- The ability to run a macro on multiple documents at once
+- The ability to run a macro multiple times at once
+- Adding key-binds to a macro
+
+# Known issues
+
+- stack-overflow exceptions will not be silently ignored, and will cause the edtior to crash. E.g something like this will cause mysterious errors till you notice the tiny typo and kick yourself:
+```javascript
+const stringBuilder = []
+
+for(let i = 0; i = file.text.length; i++) {
+    stringBuilder.push(String.fromCharCode(file.text.charCodeAt(i) + cipherOffset));
+}
 ```
 
-## New script
-
-This command will open up the default script template into a split configuration, where you can immediately start writing code.
-
-The document won't have any autocomplete, as it doesn't know about the objects and functions that the extension is injecting above the code when it will be ran. Take a look at the examples folder in this repo, or the API Documentation section below for reference.
-
-## Run script
-
-This command will attempt to find a visible editor with valid script text in it, and then run that script on any other visible document. If more than one document is visible, you will need to bring focus to the one in which you want the script to run. <b> !!! This extension makes no effort to validate the security of the code in a script, as it assumes you are writing the code yourself. Only copy-paste and run scripts from the internet if you know for sure that don't have malicious code in them. !!! </b>
-
-## Save script
-
-This command will save your script as a JavaScript file with the name that you specify. You will then be editing the version of the script that has been saved to disk, so any further saves can be made directly to the file itself without using the `Save script` command again.
-
-## Load script
-
-This command will search the saved scripts directory for all scripts, and allow you to load one of them by name. The script will then be opened in a new editor in a way similar to the `New script` command.
-
-## Remove script
-
-This command will recycle-bin-delete a script that you specify. It will no longer appear in the list you get with the `Load script` command.
 
 # API Documentation / details
 
-Before the script gets run, the extension needs to find the text editor with the script in it, as well as the text editor which we want to run the script in. 
-The extension will search all visible files for text where the first line contains the word 'script' somewhere in it, non-case-sensitive. 
+One problem with this approach to macros is that even though you will be writing far less code that is far simpler, you won't get any autocomplete, so I have to write a bunch of documentation on all of the objects that I've injected (sigh). There may be functions that I omit due to them being too insignificant.
 
-Your script is run by using a `Function()` JavaScript object (not easy to find docs on this unless you are looking for documentation on [`eval()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval#never_use_eval!)).
-You can see what this call looks like for yourself `runScriptCommand.ts`, if that's your thing, and you will notice that some objects are being injected into it.
+## Injected objects?
+
+Your macro is ran by using a `Function()` JavaScript object (not easy to find docs on this unless you are looking for documentation on [`eval()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval#never_use_eval!)).
+You can see what this call looks like for yourself `runmacroCommand.ts`, if that's your thing, and you will notice that some objects are being injected into it.
 
 For those of you who didn't peer at the source code, think of it as basically looking something like this:
 
 ```javascript
-const runScript = (context, debug, ...injectedFunctions) => {
-    // your script code is copy-pasted here, and has access to all the injected objects above
+const runmacro = (context, debug, ...injectedFunctions) => {
+    // your macro code is copy-pasted here, and has access to all the injected objects above
 }
 ```
-Except that it won't have access to global scope, because it is wrapped in a string and then compiled with a <code l='javascript'>Function()</code> object.
+Except that it won't have access to global scope, because it is wrapped in a string and then compiled with a <code l='JavaScript'>Function()</code> object.
 
-One problem with this approach is that while it significantly simplifies and reduces the code you will have to write, it doesn't give any autocomplete, so now I have to write a bunch of documentation on everything (sigh). There may be functions that I omit due to them being too insignificant. (I have actually used this extension to generate this documentation),
+[//]: # "Anchor point"
 
     
 ## context : ScriptContext
-You will be using this object to get the target file, create new output files, and possibly animations (yes you read that last bit right)
+You will be using this object to get the target file, create new output files, and possibly animations.
 
 
 
@@ -85,7 +96,9 @@ You will be using this object to get the target file, create new output files, a
 
 </summary>
 
-> Use `getFile()` to get the currently active file as an `EditableFile` object.The index is zero by default, which points to the target file.An index greater than 0 can be provided to access files that were newly created with `newFile`.
+> Use `getFile()` to get the currently active file as an `EditableFile` object. 
+The index is zero by default, which points to the target file. 
+An index greater than 0 can be provided to access files that were newly created with `newFile`.
 
 </details>
 
@@ -97,7 +110,8 @@ You will be using this object to get the target file, create new output files, a
 
 </summary>
 
-> Use `newFile()` to create a new output file as an `EditableObject` object.Text can be provided to set it's initial text.
+> Use `newFile()` to create a new output file as an `EditableObject` object. 
+Text can be provided to set it's initial text.
 
 </details>
 
@@ -105,11 +119,14 @@ You will be using this object to get the target file, create new output files, a
 
 <details>
 <summary>
-    <code class="Language-typescript"> context.async outputImmediate(index=0)</code></p>
+    <code class="Language-typescript">async context.outputImmediate(index=0)</code></p>
 
 </summary>
 
-> Use `outputImmediate()` to push the current text in a file directly to the target file immediately.This has no real use other than novelty, in that it can be used along with `setInterval`/`loop` to make animations.There was no real reason for me to add this, or the interval method overrides, I just did it for fun.See the GOL example to see how to use
+> Use `outputImmediate()` to push the current text in a file directly to the target file immediately.
+This has no real use other than novelty, in that it can be used along with `setInterval`/`loop` to make animations.
+There was no real reason for me to add this, or the interval method overrides, I just did it for fun.
+See the GOL example to see how to use
 
 </details>
 
@@ -121,18 +138,57 @@ Possible additions:
 
     
 ## file : EditableFile
-This is the object that you will use to files. Note that you aren't editing the actual document, rather, you
-are making changes to a normal javascript string, and the extension will replace all text in the target document with the new text.
+This is the object that you will use to edit a file. 
+Note that you aren't editing the actual document, rather, you
+are making changes to a normal javascript string, and the extension will replace all text in the target document with the new text after the macro has ran.
+I've also added a bunch of string manipulation utility functions that I found useful.
 
 
 
 <details>
 <summary>
-    <code class="Language-typescript"> file.text, setText(newText:string)</code></p>
+    <code class="Language-typescript"> file.text : string</code></p>
 
 </summary>
 
-> Get and set the text on the object. Most of your scripts will use these
+> The text of this document. 
+If this is a target document referring to an actual open document, it will contain text as well as information about the current selection.
+
+</details>
+
+
+
+<details>
+<summary>
+    <code class="Language-typescript"> file.initialSelectedRanges : [number, number][]</code></p>
+
+</summary>
+
+> Get all of the selected ranges in the current document
+
+</details>
+
+
+
+<details>
+<summary>
+    <code class="Language-typescript"> file.newSelectedRanges : [number, number][]</code></p>
+
+</summary>
+
+> New ranges that will be selected after the macro is run. Make the start and end the same in [start,end] to get a position instead of a range.
+
+</details>
+
+
+
+<details>
+<summary>
+    <code class="Language-typescript"> file.setText(newText:string)</code></p>
+
+</summary>
+
+> Same as `file.text = newText`, but will throw an error if the object you're passing isn't a `typeof 'string'` or `instanceof String`.
 
 </details>
 
@@ -144,7 +200,8 @@ are making changes to a normal javascript string, and the extension will replace
 
 </summary>
 
-> Save the current value text as un 'undo point'. The extension will then replay all of these undo points Onto the target document before the final output, so that you can undo/redo between them - possibly for debugging purposes. 
+> Save the value of file.text as an 'undo point'. 
+The extension will then replay all of these undo points  onto the target document before the final output, so that you can undo/redo between them - possibly for debugging purposes. 
 
 </details>
 
@@ -180,7 +237,7 @@ are making changes to a normal javascript string, and the extension will replace
 
 </summary>
 
-> Same as matchAllArray but collects all ranges. A range is defined as a tuple [start,end] where start is the start of the match (inclusive) and end is the end of a match (exclusive, 1 after the end of a match).
+> Same as matchAllArray but collects all ranges.  A range is defined as a tuple [start,end] where start is the start of the match (inclusive) and end is the end of a match (exclusive, 1 after the end of a match).
 
 </details>
 
@@ -204,7 +261,9 @@ are making changes to a normal javascript string, and the extension will replace
 
 </summary>
 
-> Replaces all specified ranges in the text with the corresponding string. Modulo will be used to loop through strings if fewer strings than ranges are provided. It then returns all the new range positions. Overlapping ranges will throw an exception.The ranges will also be returned in sorted order based on their starting point, as this is a side-effect of checking for overlapping ranges.
+> Replaces all specified ranges in the text with the corresponding string.  Modulo will be used to loop through strings if fewer strings than ranges are provided.  It then returns all the new range positions. 
+Overlapping ranges will throw an exception. 
+The ranges will also be returned in sorted order based on their starting point, as this is a side-effect of checking for overlapping ranges.
 
 </details>
 
@@ -306,7 +365,7 @@ This object is used to log things.
 
 <details>
 <summary>
-    <code class="Language-typescript"> context.async info(message)</code></p>
+    <code class="Language-typescript">async context.info(message)</code></p>
 
 </summary>
 
@@ -318,7 +377,7 @@ This object is used to log things.
 
 <details>
 <summary>
-    <code class="Language-typescript"> context.async error(message)</code></p>
+    <code class="Language-typescript">async context.error(message)</code></p>
 
 </summary>
 
@@ -330,7 +389,11 @@ This object is used to log things.
 
 Possible additions: 
 
-- Some way to log to a console of some sort. I don't care to implement this for now because I can print text straight to the document, or use other debugging techniques
+- Some way to log to a console of some sort. 
+I don't care to implement this for now because I can print text straight to the document, or use other debugging techniques
+- Breakpoints. 
+But I have no idea how to do this. 
+Any PRers?
 
     
 ## ...injectedMethods
@@ -340,11 +403,12 @@ These are methods that have been injected for convenience, or to override the no
 
 <details>
 <summary>
-    <code class="Language-typescript"> SetInterval(callback, milliseconds) -> NodeJS.Timeout,SetTimeout(callback, milliseconds) -> NodeJS.Timeout,ClearInterval(timeout: NodeJS.Timeout),ClearTimeout(timeout: NodeJS.Timeout),</code></p>
+    <code class="Language-typescript"> SetInterval(callback, milliseconds) -> NodeJS.Timeout, SetTimeout(callback, milliseconds) -> NodeJS.Timeout, ClearInterval(timeout: NodeJS.Timeout), ClearTimeout(timeout: NodeJS.Timeout),</code></p>
 
 </summary>
 
-> These are wrappers for the normal javascript methods that allow the extension to keep track of the TimerIDs so that it can await them.Doing this allows errors in these methods to be correctly displayed as error messages and not be silently ignored.
+> These are wrappers for the normal javascript methods that allow the extension to keep track of the TimerIDs so that it can await them. 
+Doing this allows errors in these methods to be correctly displayed as error messages and not be silently ignored.
 
 </details>
 
@@ -356,7 +420,7 @@ These are methods that have been injected for convenience, or to override the no
 
 </summary>
 
-> A wrapper for the setInterval method that allows for a loop counter, and accepts a callback That can return `true` to break out of the loop and `false` 
+> A wrapper for the setInterval method that allows for a loop counter, and accepts a callback  That can return `true` to break out of the loop and `false` 
 
 </details>
 
@@ -364,5 +428,6 @@ These are methods that have been injected for convenience, or to override the no
 
 Possible additions: 
 
-- Low priority - Keyboard input. Any PRers ?
+- Low priority - Keyboard input. 
+Any PRers ?
 

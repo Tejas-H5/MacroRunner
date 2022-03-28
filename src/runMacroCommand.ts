@@ -26,15 +26,14 @@ export const getEditorWithMacroFile = () => {
     let visibleEditors = vscode.window.visibleTextEditors;
     let macroEditors = visibleEditors.filter((editor) => {
         const code = editor.document.getText();
-        const firstLine = code.indexOf("\n") === -1 ? code : code.substring(0, code.indexOf("\n"));
-        const containsSafetyCatch = firstLine.toLowerCase().includes("macro");
+        const containsSafetyCatch = code.startsWith("// macro");
 
         return containsSafetyCatch;
     });
 
     if (macroEditors.length === 0) {
         throw new Error(
-            "Make sure your macro has the word 'macro' somewhere on the first line (this is a safety catch), or that you have the right file visible"
+            "Make sure your macro starts with '// macro' (this is a safety catch), or that you have the right file visible"
         );
     }
 
