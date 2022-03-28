@@ -1,41 +1,41 @@
 import { TextEncoder } from "util";
 import * as vscode from "vscode";
-import { scriptsUri } from "./extension";
+import { macrosUri } from "./extension";
 import { replaceAll } from "./textEditorUtil";
-import { getEditorWithScriptFile } from "./runScriptCommand";
+import { getEditorWithMacroFile } from "./runMacroCommand";
 
-const ensureScriptsDir = async () => {
-    if (scriptsUri === null) {
-        throw new Error("Scripts directory is unknown");
+const ensureMacrosDir = async () => {
+    if (macrosUri === null) {
+        throw new Error("Macros directory is unknown");
     }
 
-    await vscode.workspace.fs.createDirectory(scriptsUri);
-    return scriptsUri;
+    await vscode.workspace.fs.createDirectory(macrosUri);
+    return macrosUri;
 };
 
-export const openScriptsDir = async () => {
-    const dir = await ensureScriptsDir();
+export const openMacrosDir = async () => {
+    const dir = await ensureMacrosDir();
     vscode.commands.executeCommand("revealFileInOS", dir);
 };
 
-const getSavedScripts = async () => {
-    const dir = await ensureScriptsDir();
+const getSavedMacros = async () => {
+    const dir = await ensureMacrosDir();
     const dirContents = await vscode.workspace.fs.readDirectory(dir);
 
     const files = dirContents.filter((c) => c[1] === vscode.FileType.File).map((c) => c[0]);
     return files;
 };
 
-const pickExistingScript = async (inputTitle: string) => {
-    const savedScriptsNamed = await getSavedScripts();
-    if (savedScriptsNamed.length === 0) {
+const pickExistingMacro = async (inputTitle: string) => {
+    const savedMacrosNamed = await getSavedMacros();
+    if (savedMacrosNamed.length === 0) {
         vscode.window.showInformationMessage(
-            "You haven't saved any scripts with the Save Script command yet"
+            "You haven't saved any macros with the Save Macro command yet"
         );
         return;
     }
 
-    const input = await vscode.window.showQuickPick(savedScriptsNamed, {
+    const input = await vscode.window.showQuickPick(savedMacrosNamed, {
         title: inputTitle,
         matchOnDescription: true,
         matchOnDetail: true,
@@ -44,18 +44,18 @@ const pickExistingScript = async (inputTitle: string) => {
     return input;
 };
 
-export const saveScriptCommand = async () => {
-    const dir = scriptsUri;
+export const saveMacroCommand = async () => {
+    const dir = macrosUri;
     if (dir === null) {
-        throw new Error("Scripts directory is unknown");
+        throw new Error("Macros directory is unknown");
     }
 
     try {
-        const scriptEditor = getEditorWithScriptFile();
-        const scriptEditorDocument = scriptEditor.document;
+        const macroEditor = getEditorWithMacroFile();
+        const macroEditorDocument = macroEditor.document;
 
         const input = await vscode.window.showInputBox({
-            title: "Name this script:",
+            title: "Name this macro:",
         });
 
         if (input === undefined) return;
@@ -66,16 +66,16 @@ export const saveScriptCommand = async () => {
 
         // no clean way to save-as, so we are going to write a new file,
         // close the existing one, then load the file we just wrote
-        const text = scriptEditorDocument.getText();
+        const text = macroEditorDocument.getText();
         const filepath = vscode.Uri.joinPath(dir, fileName);
         const enc = new TextEncoder();
 
         await vscode.workspace.fs.writeFile(filepath, enc.encode(text));
 
         await vscode.window
-            .showTextDocument(scriptEditorDocument, scriptEditor.viewColumn)
+            .showTextDocument(macroEditorDocument, macroEditor.viewColumn)
             .then(async (editor) => {
-                if (scriptEditorDocument.isUntitled) {
+                if (macroEditorDocument.isUntitled) {
                     // no clean way to close an untitled document, so we are just going to
                     // replace with nothing so that we don't get the option to save the document
                     await replaceAll("", editor.document, editor.viewColumn, false).then(() => {
@@ -83,15 +83,15 @@ export const saveScriptCommand = async () => {
                     });
                 }
 
-                await loadScript(fileName);
+                await loadMacro(fileName);
             });
     } catch (err: any) {
         vscode.window.showErrorMessage(err.message);
     }
 };
 
-const loadScript = async (input: string) => {
-    const dir = scriptsUri;
+const loadMacro = async (input: string) => {
+    const dir = macrosUri;
     if (dir === null) return;
 
     try {
@@ -103,23 +103,23 @@ const loadScript = async (input: string) => {
     }
 };
 
-export const loadScriptCommand = async () => {
-    const input = await pickExistingScript("pick a script to load");
+export const loadMacroCommand = async () => {
+    const input = await pickExistingMacro("pick a macro to load");
     if (input === undefined) return;
 
-    await loadScript(input);
+    await loadMacro(input);
 };
 
-export const removeScriptCommand = async () => {
-    const input = await pickExistingScript("pick a script to load");
+export const removeMacroCommand = async () => {
+    const input = await pickExistingMacro("pick a macro to load");
     if (input === undefined) return;
 
-    const dir = scriptsUri;
+    const dir = macrosUri;
     if (dir === null) return;
 
     try {
         const answer = await vscode.window.showWarningMessage(
-            "Are you sure you want to delete the script " + input + " ?",
+            "Are you sure you want to delete the macro " + input + " ?",
             {
                 modal: true,
                 detail: "It will be moved to the recycle bin if possible. What's the deal with the recycle bin anyway? what exactly are we recycling?",
@@ -142,7 +142,7 @@ export const removeScriptCommand = async () => {
     }
 };
 
-const defaultScript = `// script 
+const defaultMacro = `// macro 
 // read documentation for injected objects like 'file', 'context', etc on the extension page
 
 const file = context.getFile();
@@ -175,8 +175,8 @@ const showDocument = async (
         });
 };
 
-export const newScriptCommand = async () => {
-    let text = defaultScript;
+export const newMacroCommand = async () => {
+    let text = defaultMacro;
     let selIndex = text.indexOf("#cursor");
     if (selIndex === -1) {
         selIndex = text.length - 1;

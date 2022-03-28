@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
 import EditableFile from "../../editableFile";
-import * as scriptRunner from "../../extension";
+import * as macroRunner from "../../extension";
 
 suite("EditableFile", () => {
     const file = new EditableFile(`Some sample text for testing the text here`);

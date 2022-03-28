@@ -17,10 +17,10 @@ export default class DebugContext {
 }
 
 export const compactStack = (stack: string) => {
-    let earlyCutoff = stack.indexOf("at eval (eval at runScriptCommand");
+    let earlyCutoff = stack.indexOf("at eval (eval at runMacroCommand");
     stack = stack.substring(0, earlyCutoff);
     stack +=
-        "\n  <The rest of the stack is internal to the scriptRunner codebase and not relevant>";
+        "\n  <The rest of the stack is internal to the MacroRunner codebase and not relevant to you>";
     stack = stack.replace(/\w+:.+\\/g, ".../");
     stack = stack.replace(/\t/g, "    ");
     return stack;

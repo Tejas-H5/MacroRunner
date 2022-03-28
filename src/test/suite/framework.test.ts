@@ -1,6 +1,6 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
-import * as scriptRunner from "../../extension";
+import * as macroRunner from "../../extension";
 
 suite("Test mocha config is working", () => {
     test("True===True", () => {

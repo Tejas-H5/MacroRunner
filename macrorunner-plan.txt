@@ -1,11 +1,11 @@
-revealFileInOS
 TODO:
--> Add features
+- Add features
 	- write documentation
 		- ctx
 			- EditableFile
 		- debug
 		- timerContainer
+		-> improve docs
 
 	- save behaviour needs to switch to the saved version of the file
 	
@@ -18,14 +18,15 @@ TODO:
 
 - unit tests to write:
 
--> Rename macrorunner to ScriptRunner, as this makes more sense. This extension is running scripts on text, not executing keypress macros
+- Rename macrorunner to ScriptRunner, as this makes more sense. This extension is running scripts on text, not executing keypress macros
+	- but there are a lot of other extensions called ScriptRunner. rename back to macroRunner
 	
 
--> do manual tests, create folder for all examples (we cant unit test these easily)
+- do manual tests, create folder for all examples (we cant unit test these easily)
 	-* setTimeout error handling
 
 
--> Low priority backlog:
+- Low priority backlog:
 	- mitigate infinite loops (yes this happened)
 		-* Investigate javascript new thread + pthread_kill
 			( any PRers ? )

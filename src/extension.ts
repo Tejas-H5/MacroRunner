@@ -1,28 +1,28 @@
 import * as vscode from "vscode";
 import {
-    loadScriptCommand,
-    saveScriptCommand,
-    removeScriptCommand,
-    newScriptCommand,
-    openScriptsDir,
-} from "./scriptStorage";
-import { runScriptCommand } from "./runScriptCommand";
+    loadMacroCommand,
+    saveMacroCommand,
+    removeMacroCommand,
+    newMacroCommand,
+    openMacrosDir,
+} from "./macroStorage";
+import { runMacroCommand } from "./runMacroCommand";
 
-export var scriptsUri: vscode.Uri | null = null;
+export var macrosUri: vscode.Uri | null = null;
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log("ScriptRunner extension is now active!");
+    console.log("MacroRunner extension is now active!");
 
     const storagePath = context.globalStorageUri;
-    scriptsUri = vscode.Uri.joinPath(storagePath, "scripts");
+    macrosUri = vscode.Uri.joinPath(storagePath, "macros");
 
     context.subscriptions.push(
-        vscode.commands.registerCommand("ScriptRunner.newScript", newScriptCommand),
-        vscode.commands.registerCommand("ScriptRunner.runScript", runScriptCommand),
-        vscode.commands.registerCommand("ScriptRunner.loadScript", loadScriptCommand),
-        vscode.commands.registerCommand("ScriptRunner.saveScript", saveScriptCommand),
-        vscode.commands.registerCommand("ScriptRunner.removeScript", removeScriptCommand),
-        vscode.commands.registerCommand("ScriptRunner.openScriptsDirectory", openScriptsDir)
+        vscode.commands.registerCommand("MacroRunner.newMacro", newMacroCommand),
+        vscode.commands.registerCommand("MacroRunner.runMacro", runMacroCommand),
+        vscode.commands.registerCommand("MacroRunner.loadMacro", loadMacroCommand),
+        vscode.commands.registerCommand("MacroRunner.saveMacro", saveMacroCommand),
+        vscode.commands.registerCommand("MacroRunner.removeMacro", removeMacroCommand),
+        vscode.commands.registerCommand("MacroRunner.openMacrosDirectory", openMacrosDir)
     );
 }
 

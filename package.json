@@ -1,7 +1,7 @@
 {
-	"name": "ScriptRunner",
-	"displayName": "ScriptRunner",
-	"description": "An extension that allows you to automate repetitive tasks with code",
+	"name": "macro-runner",
+	"displayName": "MacroRunner",
+	"deMacroion": "An extension that allows you to automate repetitive tasks with code",
 	"version": "0.0.1",
 	"engines": {
 		"vscode": "^1.65.0"
@@ -9,40 +9,45 @@
 	"categories": [
 		"Other"
 	],
+	"repository": {
+		"directory": ".",
+		"type": "git",
+		"url": ""
+	},
 	"activationEvents": [
-		"onCommand:ScriptRunner.runScript",
-		"onCommand:ScriptRunner.newScript",
-		"onCommand:ScriptRunner.loadScript",
-		"onCommand:ScriptRunner.saveScript",
-		"onCommand:ScriptRunner.removeScript",
-		"onCommand:ScriptRunner.openScriptsDirectory"
+		"onCommand:MacroRunner.runMacro",
+		"onCommand:MacroRunner.newMacro",
+		"onCommand:MacroRunner.loadMacro",
+		"onCommand:MacroRunner.saveMacro",
+		"onCommand:MacroRunner.removeMacro",
+		"onCommand:MacroRunner.openMacrosDirectory"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "ScriptRunner.runScript",
-				"title": "ScriptRunner: Run script"
+				"command": "MacroRunner.runMacro",
+				"title": "MacroRunner: Run Macro"
 			},
 			{
-				"command": "ScriptRunner.newScript",
-				"title": "ScriptRunner: New script"
+				"command": "MacroRunner.newMacro",
+				"title": "MacroRunner: New Macro"
 			},
 			{
-				"command": "ScriptRunner.loadScript",
-				"title": "ScriptRunner: Load script"
+				"command": "MacroRunner.loadMacro",
+				"title": "MacroRunner: Load Macro"
 			},
 			{
-				"command": "ScriptRunner.saveScript",
-				"title": "ScriptRunner: Save script"
+				"command": "MacroRunner.saveMacro",
+				"title": "MacroRunner: Save Macro"
 			},
 			{
-				"command": "ScriptRunner.removeScript",
-				"title": "ScriptRunner: Remove script"
+				"command": "MacroRunner.removeMacro",
+				"title": "MacroRunner: Remove Macro"
 			},
 			{
-				"command": "ScriptRunner.openScriptsDirectory",
-				"title": "ScriptRunner: Open scripts directory"
+				"command": "MacroRunner.openMacrosDirectory",
+				"title": "MacroRunner: Open Macros directory"
 			}
 		]
 	},
@@ -60,12 +65,12 @@
 		"@types/mocha": "^9.1.0",
 		"@types/node": "14.x",
 		"@types/vscode": "^1.65.0",
-		"@typescript-eslint/eslint-plugin": "^5.12.1",
-		"@typescript-eslint/parser": "^5.12.1",
+		"@typeMacro-eslint/eslint-plugin": "^5.12.1",
+		"@typeMacro-eslint/parser": "^5.12.1",
 		"@vscode/test-electron": "^2.1.2",
 		"eslint": "^8.9.0",
 		"glob": "^7.2.0",
 		"mocha": "^9.2.1",
-		"typescript": "^4.5.5"
+		"typeMacro": "^4.5.5"
 	}
 }

@@ -3,7 +3,7 @@ import EditableFile from "./editableFile";
 import { replaceAll } from "./textEditorUtil";
 import { assertType } from "./sourceUtil";
 
-class ScriptContext {
+class MacroContext {
     private editor: vscode.TextEditor;
     private document: vscode.TextDocument;
     private files: EditableFile[];
@@ -68,4 +68,4 @@ class ScriptContext {
     }
 }
 
-export default ScriptContext;
+export default MacroContext;

@@ -1,7 +1,5 @@
-# ScriptRunner
-A quick and dirty way to programmatically make edits to any currently open text documents. 
-
-The API is designed with ease of use and flexibility in mind, and allows you to do anything that JavaScript allows you to do.
+# MacroRunner
+Allows you to use JavaScript to programmatically edit a text document as simply and quickly as possible. The API is designed to be as simple and easy to use as possible, and 
 
 # The bare minimum knowledge
 

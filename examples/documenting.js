@@ -1,15 +1,15 @@
 const createFunctionSection = ({ objectName, name, desc }) => {
     let async = false;
-    if (name.indexOf("Async ") !== -1) {
+    if (name.indexOf("async ") !== -1) {
         async = true;
-        name = name.replace("Async ", "");
+        name = name.replace("async ", "");
     }
 
     return `
 
 <details>
 <summary>
-    <code class="Language-typescript">${async ? "Async" : ""} ${
+    <code class="Language-typescript">${async ? "async" : ""} ${
         objectName ? objectName + "." : ""
     }${name}</code></p>
 
@@ -84,8 +84,8 @@ are making changes to a normal javascript string, and the extension will replace
             {
                 name: "markUndoPoint()",
                 desc:
-                    "Save the current value text as un 'undo point'. The extension will then replay all of these undo points " +
-                    "Onto the target document before the final output, so that you can undo/redo between them - possibly for debugging purposes. ",
+                    "Save the value of file.text as an 'undo point'. The extension will then replay all of these undo points " +
+                    "onto the target document before the final output, so that you can undo/redo between them - possibly for debugging purposes. ",
             },
             {
                 name: "matchAllArray(expr: RegExp | string) -> RegExpMatchArray[]",
@@ -148,6 +148,7 @@ are making changes to a normal javascript string, and the extension will replace
         desc: `This object is used to log things.`,
         plans: [
             `Some way to log to a console of some sort. I don't care to implement this for now because I can print text straight to the document, or use other debugging techniques`,
+            `Breakpoints. But I have no idea how to do this. Any PRers?`,
         ],
         objectName: "context",
         methods: [
