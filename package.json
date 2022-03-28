@@ -1,6 +1,6 @@
 {
-	"name": "macrorunner",
-	"displayName": "MacroRunner",
+	"name": "ScriptRunner",
+	"displayName": "ScriptRunner",
 	"description": "An extension that allows you to automate repetitive tasks with code",
 	"version": "0.0.1",
 	"engines": {
@@ -10,34 +10,39 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:macrorunner.runMacro",
-		"onCommand:macrorunner.newMacro",
-		"onCommand:macrorunner.loadMacro",
-		"onCommand:macrorunner.saveMacro",
-		"onCommand:macrorunner.removeMacro"
+		"onCommand:ScriptRunner.runScript",
+		"onCommand:ScriptRunner.newScript",
+		"onCommand:ScriptRunner.loadScript",
+		"onCommand:ScriptRunner.saveScript",
+		"onCommand:ScriptRunner.removeScript",
+		"onCommand:ScriptRunner.openScriptsDirectory"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "macrorunner.runMacro",
-				"title": "Macro runner: Run macro"
+				"command": "ScriptRunner.runScript",
+				"title": "ScriptRunner: Run script"
 			},
 			{
-				"command": "macrorunner.newMacro",
-				"title": "Macro runner: New macro"
+				"command": "ScriptRunner.newScript",
+				"title": "ScriptRunner: New script"
 			},
 			{
-				"command": "macrorunner.loadMacro",
-				"title": "Macro runner: Load macro"
+				"command": "ScriptRunner.loadScript",
+				"title": "ScriptRunner: Load script"
 			},
 			{
-				"command": "macrorunner.saveMacro",
-				"title": "Macro runner: Save macro"
+				"command": "ScriptRunner.saveScript",
+				"title": "ScriptRunner: Save script"
 			},
 			{
-				"command": "macrorunner.removeMacro",
-				"title": "Macro runner: Remove macro"
+				"command": "ScriptRunner.removeScript",
+				"title": "ScriptRunner: Remove script"
+			},
+			{
+				"command": "ScriptRunner.openScriptsDirectory",
+				"title": "ScriptRunner: Open scripts directory"
 			}
 		]
 	},

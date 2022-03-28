@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 import EditableFile from "./editableFile";
-import { replaceAll, replaceAllFile } from "./macroUtil";
+import { replaceAll } from "./textEditorUtil";
 import { assertType } from "./sourceUtil";
 
-class MacroContext {
+class ScriptContext {
     private editor: vscode.TextEditor;
     private document: vscode.TextDocument;
     private files: EditableFile[];
@@ -64,8 +64,8 @@ class MacroContext {
     async outputImmediate(index: number = 0) {
         assertType(index, "number");
 
-        replaceAll(this.getFile(index).getText(), this.document, this.editor.viewColumn, false);
+        replaceAll(this.getFile(index).text, this.document, this.editor.viewColumn, false);
     }
 }
 
-export default MacroContext;
+export default ScriptContext;

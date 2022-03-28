@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { showErrors } from "./macroUtil";
+import { showErrors } from "./logging";
 
 const [setIntervalReal, clearIntervalReal, setTimeoutReal, clearTimeoutReal] = [
     setInterval,

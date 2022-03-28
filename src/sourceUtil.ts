@@ -18,3 +18,11 @@ export const assertType = (object: any, type: string) => {
     if (typeof object !== type)
         throw new Error(object.name ? object.name : object + " should be of type " + type);
 };
+
+export const assertString = (text: any) => {
+    if (text instanceof String || typeof text === "string") {
+        return;
+    }
+
+    throw new Error("newText is not a string, it is a " + typeof text);
+};

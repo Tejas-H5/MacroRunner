@@ -1,3 +1,5 @@
+import { assertString } from "./sourceUtil";
+
 const toRegexGlobal = (expr: any) => {
     if (expr instanceof RegExp) {
         let flags = expr.flags;
@@ -13,7 +15,7 @@ const toRegexGlobal = (expr: any) => {
 };
 
 export default class EditableFile {
-    private text: string;
+    text: string;
     intermediateStates: string[];
 
     newSelectedRanges: [number, number][];
@@ -24,21 +26,9 @@ export default class EditableFile {
         this.newSelectedRanges = new Array<[number, number]>();
     }
 
-    setText(newText: any) {
-        let text: string;
-        if (newText instanceof String) {
-            text = `${newText}`;
-        } else if (typeof newText === "string") {
-            text = newText;
-        } else {
-            throw new Error("newText is not a string, it is a " + typeof newText);
-        }
-
-        this.text = text;
-    }
-
-    getText() {
-        return this.text;
+    setText(newText: string) {
+        assertString(newText);
+        this.text = newText;
     }
 
     markUndoPoint() {

@@ -1,28 +1,25 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
 import EditableFile from "../../editableFile";
-import * as macroRunner from "../../extension";
+import * as scriptRunner from "../../extension";
 
 suite("EditableFile", () => {
     const file = new EditableFile(`Some sample text for testing the text here`);
     suite("indexAfter", () => {
         test("regular case", () => {
-            assert.strictEqual(
-                file.indexAfter("text"),
-                file.getText().indexOf("text") + "text".length
-            );
+            assert.strictEqual(file.indexAfter("text"), file.text.indexOf("text") + "text".length);
         });
 
         test("with nonzero pos", () => {
-            const pos = file.getText().indexOf("test");
+            const pos = file.text.indexOf("test");
             assert.strictEqual(
                 file.indexAfter("testing", pos),
-                file.getText().indexOf("testing", pos) + "testing".length
+                file.text.indexOf("testing", pos) + "testing".length
             );
         });
 
         test("final index", () => {
-            assert.strictEqual(file.indexAfter("here"), file.getText().length);
+            assert.strictEqual(file.indexAfter("here"), file.text.length);
         });
 
         test("first index", () => {
@@ -41,16 +38,16 @@ suite("EditableFile", () => {
         const testLastIndexAfterFoundCase = (str: string, pos: number | undefined = undefined) => {
             assert.strictEqual(
                 file.lastIndexAfter(str, pos),
-                file.getText().lastIndexOf(str, pos) + str.length
+                file.text.lastIndexOf(str, pos) + str.length
             );
         };
 
         test("regular case", () => {
-            testLastIndexAfterFoundCase("text", file.getText().indexOf("testing"));
+            testLastIndexAfterFoundCase("text", file.text.indexOf("testing"));
         });
 
         test("overlap", () => {
-            assert.strictEqual(file.lastIndexAfter("test", file.getText().indexOf("testing")), -1);
+            assert.strictEqual(file.lastIndexAfter("test", file.text.indexOf("testing")), -1);
         });
 
         test("regular case default parameter", () => {
@@ -66,7 +63,7 @@ suite("EditableFile", () => {
         });
 
         test("not found case", () => {
-            const pos = file.getText().indexOf("testing");
+            const pos = file.text.indexOf("testing");
             assert.strictEqual(file.lastIndexAfter("testing", pos + 1), -1);
         });
     });
@@ -80,19 +77,16 @@ suite("EditableFile", () => {
 
     suite("matchNext", () => {
         test("default parameter", () => {
-            assert.strictEqual(file.matchNext(/sample/)?.index, file.getText().indexOf("sample"));
+            assert.strictEqual(file.matchNext(/sample/)?.index, file.text.indexOf("sample"));
         });
 
         test("positional", () => {
-            const pos = file.getText().indexOf("testing");
-            assert.strictEqual(
-                file.matchNext(/text/, pos)?.index,
-                file.getText().indexOf("text", pos)
-            );
+            const pos = file.text.indexOf("testing");
+            assert.strictEqual(file.matchNext(/text/, pos)?.index, file.text.indexOf("text", pos));
         });
 
         test("not found", () => {
-            const pos = file.getText().indexOf("testing");
+            const pos = file.text.indexOf("testing");
             assert.strictEqual(file.matchNext(/sample/, pos)?.index, undefined);
         });
 
@@ -102,20 +96,20 @@ suite("EditableFile", () => {
 
             pos = file.matchNext("text", pos)?.index;
 
-            assert.strictEqual(file.getText().indexOf("text", 0), pos, "2");
+            assert.strictEqual(file.text.indexOf("text", 0), pos, "2");
 
             // don't move if we start in the same place
             pos = file.matchNext("text", pos)?.index;
-            assert.strictEqual(file.getText().indexOf("text", 0), pos, "3");
+            assert.strictEqual(file.text.indexOf("text", 0), pos, "3");
 
             pos = file.matchNext(/ \w+/, pos)?.index;
             assert(pos);
             pos++;
 
-            assert.strictEqual(file.getText().indexOf("for", 0), pos, "4");
+            assert.strictEqual(file.text.indexOf("for", 0), pos, "4");
 
             pos = file.matchNext(/here/)?.index;
-            assert.strictEqual(file.getText().indexOf("here"), pos, "5");
+            assert.strictEqual(file.text.indexOf("here"), pos, "5");
         });
     });
 
@@ -123,7 +117,7 @@ suite("EditableFile", () => {
         test("simple insertMany", () => {
             const file = new EditableFile("");
             for (let i = 0; i < 10; i++) {
-                file.setText(file.getText() + "a ");
+                file.setText(file.text + "a ");
             }
 
             const positions = file.matchAllPositions(/a/).map((x) => x + 1);
@@ -135,7 +129,7 @@ suite("EditableFile", () => {
                 expectedText += "ab ";
             }
 
-            assert.strictEqual(file.getText(), expectedText, "wrong text");
+            assert.strictEqual(file.text, expectedText, "wrong text");
 
             let expectedPositions = [];
             for (let i = 0; i < positions.length; i++) {
@@ -148,7 +142,7 @@ suite("EditableFile", () => {
         test("simple removeMany", () => {
             const file = new EditableFile("");
             for (let i = 0; i < 10; i++) {
-                file.setText(file.getText() + "a ");
+                file.setText(file.text + "a ");
             }
 
             const ranges = file.matchAllRanges(/a/);
@@ -159,7 +153,7 @@ suite("EditableFile", () => {
                 expectedText += " ";
             }
 
-            assert.strictEqual(file.getText(), expectedText, "wrong text");
+            assert.strictEqual(file.text, expectedText, "wrong text");
 
             let expectedRanges = [];
             for (let i = 0; i < ranges.length; i++) {
@@ -172,7 +166,7 @@ suite("EditableFile", () => {
         test("simple replaceMany", () => {
             const file = new EditableFile("");
             for (let i = 0; i < 10; i++) {
-                file.setText(file.getText() + "a ");
+                file.setText(file.text + "a ");
             }
 
             const ranges = file.matchAllRanges(/a/);
@@ -183,7 +177,7 @@ suite("EditableFile", () => {
                 expectedText += "bbb ";
             }
 
-            assert.strictEqual(file.getText(), expectedText, "wrong text");
+            assert.strictEqual(file.text, expectedText, "wrong text");
 
             let expectedRanges = [];
             for (let i = 0; i < ranges.length; i++) {
@@ -202,7 +196,7 @@ suite("EditableFile", () => {
                 ],
                 ["3", "4"]
             );
-            assert.strictEqual(file.getText(), "34");
+            assert.strictEqual(file.text, "34");
         });
 
         test("overlapping ranges", () => {
@@ -239,7 +233,7 @@ suite("EditableFile", () => {
                 ["5", "3", "4"]
             );
 
-            assert.strictEqual(file.getText(), "345");
+            assert.strictEqual(file.text, "345");
         });
     });
 });

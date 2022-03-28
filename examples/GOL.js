@@ -1,4 +1,4 @@
-// macro : Conway's Game of life
+// script : Conway's Game of life
 
 let board = [];
 const size = 50;

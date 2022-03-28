@@ -1,6 +1,6 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
-import * as macroRunner from "../../extension";
+import * as scriptRunner from "../../extension";
 import { containsWhileLoop } from "../../sourceUtil";
 
 suite("containsWhileLoop", () => {

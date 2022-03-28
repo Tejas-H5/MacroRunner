@@ -1,22 +1,21 @@
-// macro
-// I used this script to write the markdown for the last part of the API documentation. I dont want to do that by hand
-
 const createFunctionSection = ({ objectName, name, desc }) => {
     let async = false;
-    if (name.indexOf("async ") !== -1) {
+    if (name.indexOf("Async ") !== -1) {
         async = true;
-        name = name.replace("async ", "");
+        name = name.replace("Async ", "");
     }
 
     return `
 
 <details>
 <summary>
-    <code class="language-typescript">${async ? "async" : ""} ${objectName ? objectName + "." : ""}${name}</code></p>
+    <code class="Language-typescript">${async ? "Async" : ""} ${
+        objectName ? objectName + "." : ""
+    }${name}</code></p>
 
 </summary>
 
-${desc}
+> ${desc}
 
 </details>
 
@@ -43,7 +42,7 @@ ${plans.map((plan) => `- ${plan}`).join("\n")}
 
 const documentation = [
     {
-        heading: "context : MacroContext",
+        heading: "context : ScriptContext",
         desc: `You will be using this object to get the target file, create new output files, and possibly animations (yes you read that last bit right)`,
         plans: [`Some way to open files in the workspace by name/glob and make changes to them`],
         objectName: "context",
@@ -79,18 +78,18 @@ are making changes to a normal javascript string, and the extension will replace
         objectName: "file",
         methods: [
             {
-                name: "getText(), setText(newText:string)",
-                desc: "Get and set the text on the object. Most of your scripts will use these",
+                name: "setText(newText:string)",
+                desc: "Same as `file.text = newText`, but will throw an error if the object you're passing isn't a `typeof 'string'` or `instanceof String`.",
             },
             {
                 name: "markUndoPoint()",
                 desc:
                     "Save the current value text as un 'undo point'. The extension will then replay all of these undo points " +
-                    "onto the target document before the final output, so that you can undo/redo between them - possibly for debugging purposes. ",
+                    "Onto the target document before the final output, so that you can undo/redo between them - possibly for debugging purposes. ",
             },
             {
                 name: "matchAllArray(expr: RegExp | string) -> RegExpMatchArray[]",
-                desc: "short for `Array.from(file.getText.matchAll(expr))`",
+                desc: "Short for `Array.from(file.getText.matchAll(expr))`",
             },
             {
                 name: "matchAllPositions(expr: RegExp | string) -> number[]",
@@ -109,38 +108,38 @@ are making changes to a normal javascript string, and the extension will replace
             {
                 name: "replaceMany(ranges: [number, number][], strings: string[]) -> number[][]",
                 desc:
-                    "replaces all specified ranges in the text with the corresponding string. " +
+                    "Replaces all specified ranges in the text with the corresponding string. " +
                     "Modulo will be used to loop through strings if fewer strings than ranges are provided. " +
-                    "It then returns all the new range positions. Overlapping ranges will throw an exception" +
+                    "It then returns all the new range positions. Overlapping ranges will throw an exception." +
                     "The ranges will also be returned in sorted order based on their starting point, as this is a side-effect of checking for overlapping ranges.",
             },
             {
                 name: "removeMany(ranges: [number, number][]) -> number[][]",
-                desc: 'short for replaceMany(ranges, [""])',
+                desc: 'Short for replaceMany(ranges, [""])',
             },
             {
                 name: "insertMany(positions: [number][]) -> number[]",
-                desc: 'short for replaceMany(ranges, [""])',
+                desc: 'Short for replaceMany(ranges, [""])',
             },
             {
                 name: "replace(str: string, start: number, end: number)",
-                desc: "short for `file.getText().substring(0, start) + str + file.getText().substring(end)`",
+                desc: "Short for `file.text.substring(0, start) + str + file.text.substring(end)`",
             },
             {
                 name: "insert(str: string, position: number)",
-                desc: "short for `replace(str, position, position)`",
+                desc: "Short for `replace(str, position, position)`",
             },
             {
                 name: "remove(start: number, end: number)",
-                desc: "short for `replace('', start, end);`",
+                desc: "Short for `replace('', start, end);`",
             },
             {
                 name: "indexAfter(str: string, position: number = 0)",
-                desc: "short for `text.indexOf(str, position) + str.length;`",
+                desc: "Short for `text.indexOf(str, position) + str.length;`",
             },
             {
                 name: "lastIndexAfter(str: string, position: number = -1)",
-                desc: "same as indexOf but in the reverse direction, and 1 index after the string to remain consistent with indexAfter",
+                desc: "Same as indexOf but in the reverse direction, and 1 index after the string to remain consistent with indexAfter",
             },
         ],
     },
@@ -169,10 +168,10 @@ are making changes to a normal javascript string, and the extension will replace
         methods: [
             {
                 name:
-                    "setInterval(callback, milliseconds) -> NodeJS.Timeout," +
-                    "setTimeout(callback, milliseconds) -> NodeJS.Timeout," +
-                    "clearInterval(timeout: NodeJS.Timeout)," +
-                    "clearTimeout(timeout: NodeJS.Timeout),",
+                    "SetInterval(callback, milliseconds) -> NodeJS.Timeout," +
+                    "SetTimeout(callback, milliseconds) -> NodeJS.Timeout," +
+                    "ClearInterval(timeout: NodeJS.Timeout)," +
+                    "ClearTimeout(timeout: NodeJS.Timeout),",
                 desc:
                     "These are wrappers for the normal javascript methods that allow the extension to keep track of the TimerIDs so that it can await them." +
                     "Doing this allows errors in these methods to be correctly displayed as error messages and not be silently ignored.",
@@ -181,7 +180,7 @@ are making changes to a normal javascript string, and the extension will replace
                 name: "loop(callback(count) -> bool, milliseconds, loopCount=undefined|number)",
                 desc:
                     "A wrapper for the setInterval method that allows for a loop counter, and accepts a callback " +
-                    "that can return `true` to break out of the loop and `false` ",
+                    "That can return `true` to break out of the loop and `false` ",
             },
         ],
     },

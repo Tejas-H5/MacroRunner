@@ -1,60 +1,60 @@
 import * as vscode from "vscode";
-import DebugContext from "./debugContext";
-import MacroContext from "./macroContext";
+import DebugContext, { showErrors } from "./logging";
+import ScriptContext from "./scriptContext";
 import { createIntervalTimeoutFunctions } from "./intervalTimeout";
-import { replaceAllFile, showErrors } from "./macroUtil";
+import { replaceAllFile } from "./textEditorUtil";
 import { containsWhileLoop } from "./sourceUtil";
 
-export const runMacroCommand = async () => {
+export const runScriptCommand = async () => {
     try {
-        const macroEditor = getEditorWithMacroFile();
-        const targetEditor = getEditorWithTargetFile(macroEditor);
+        const scriptEditor = getEditorWithScriptFile();
+        const targetEditor = getEditorWithTargetFile(scriptEditor);
 
-        const executionResult = await runMacro(macroEditor, targetEditor);
+        const executionResult = await runScript(scriptEditor, targetEditor);
 
         if (!executionResult) {
             return;
         }
 
-        await applyMacroContextResult(executionResult, targetEditor);
+        await applyScriptContextResult(executionResult, targetEditor);
     } catch (err: any) {
         vscode.window.showErrorMessage(err.message);
     }
 };
 
-export const getEditorWithMacroFile = () => {
+export const getEditorWithScriptFile = () => {
     let visibleEditors = vscode.window.visibleTextEditors;
-    let macroEditors = visibleEditors.filter((editor) => {
+    let scriptEditors = visibleEditors.filter((editor) => {
         const code = editor.document.getText();
         const firstLine = code.indexOf("\n") === -1 ? code : code.substring(0, code.indexOf("\n"));
-        const containsSafetyCatch = firstLine.toLowerCase().includes("macro");
+        const containsSafetyCatch = firstLine.toLowerCase().includes("script");
 
         return containsSafetyCatch;
     });
 
-    if (macroEditors.length === 0) {
+    if (scriptEditors.length === 0) {
         throw new Error(
-            "Make sure your macro has the word 'macro' somewhere on the first line (this is a safety catch), or that you have the right file visible"
+            "Make sure your script has the word 'script' somewhere on the first line (this is a safety catch), or that you have the right file visible"
         );
     }
 
-    if (macroEditors.length > 1) {
+    if (scriptEditors.length > 1) {
         throw new Error(
-            "Found multiple macros, make sure that only the macro you want to run is visible."
+            "Found multiple scripts, make sure that only the script you want to run is visible."
         );
     }
 
-    // sometimes copy-pasted macro code can resolve to c/c++
-    if (macroEditors[0].document.languageId !== "javascript") {
-        vscode.languages.setTextDocumentLanguage(macroEditors[0].document, "javascript");
+    // sometimes copy-pasted script code can resolve to c/c++
+    if (scriptEditors[0].document.languageId !== "javascript") {
+        vscode.languages.setTextDocumentLanguage(scriptEditors[0].document, "javascript");
     }
 
-    return macroEditors[0];
+    return scriptEditors[0];
 };
 
-const getEditorWithTargetFile = (macroEditor: vscode.TextEditor) => {
+const getEditorWithTargetFile = (scriptEditor: vscode.TextEditor) => {
     let editor = vscode.window.activeTextEditor;
-    if (editor && editor !== macroEditor) return editor;
+    if (editor && editor !== scriptEditor) return editor;
 
     const visibleEditors = vscode.window.visibleTextEditors;
     let visibleTextEditors = new Array<vscode.TextEditor>();
@@ -67,16 +67,16 @@ const getEditorWithTargetFile = (macroEditor: vscode.TextEditor) => {
     }
 
     if (visibleEditors.length === 2 || editor === undefined) {
-        return visibleEditors[0] === macroEditor ? visibleEditors[1] : visibleEditors[0];
+        return visibleEditors[0] === scriptEditor ? visibleEditors[1] : visibleEditors[0];
     } else {
         throw new Error(
-            "When you have more than two other editors open, bring focus to the one you want to run the macro in"
+            "When you have more than two other editors open, bring focus to the one you want to run the script in"
         );
     }
 };
 
-const runMacro = async (macroEditor: vscode.TextEditor, targetEditor: vscode.TextEditor) => {
-    const code = macroEditor.document.getText();
+const runScript = async (scriptEditor: vscode.TextEditor, targetEditor: vscode.TextEditor) => {
+    const code = scriptEditor.document.getText();
     if (containsWhileLoop(code)) {
         // wait for the user to close the warning before proceeding anyway
         await vscode.window.showWarningMessage(
@@ -86,20 +86,20 @@ If you aren't very sure that this code won't hang, ready up a Task Manager or co
         );
     }
 
-    // prepare objects to feed to the macro
-    const ctx = new MacroContext(targetEditor);
+    // prepare objects to feed to the script
+    const ctx = new ScriptContext(targetEditor);
     const debug = new DebugContext();
     const timerContainer = createIntervalTimeoutFunctions();
     const allInjectedFunctions = [...timerContainer.functions];
 
-    // actually run the macro
+    // actually run the script
     try {
-        const macroFunction = Function(`
+        const scriptFunction = Function(`
           "use strict";
           return (async (context, debug, ${allInjectedFunctions.map((o) => o.name).join(",")}) => {
               ${code}
           });`)();
-        await macroFunction(ctx, debug, ...allInjectedFunctions);
+        await scriptFunction(ctx, debug, ...allInjectedFunctions);
     } catch (e: any) {
         showErrors(e);
         return;
@@ -112,14 +112,14 @@ If you aren't very sure that this code won't hang, ready up a Task Manager or co
     return ctx;
 };
 
-const applyMacroContextResult = async (ctx: MacroContext, targetEditor: vscode.TextEditor) => {
+const applyScriptContextResult = async (ctx: ScriptContext, targetEditor: vscode.TextEditor) => {
     // update the current text file if we had any outputs
     const targetEditorLanguage = targetEditor.document.languageId;
     const initialDocument = targetEditor.document;
 
     // create and update all non-empty output files
     for (let i = 0; i < ctx.fileCount(); i++) {
-        if (ctx.getFile(i).getText() === "") continue;
+        if (ctx.getFile(i).text === "") continue;
 
         let document: vscode.TextDocument;
         if (i === 0) {
