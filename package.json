@@ -2,9 +2,14 @@
 	"name": "macro-runner",
 	"displayName": "MacroRunner",
 	"description": "A quick way to make edits to a single document using JavaScript",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"engines": {
 		"vscode": "^1.65.0"
+	},
+	"icon": "res/icon.png",
+	"galleryBanner": {
+		"color": "#161616",
+		"theme": "dark"
 	},
 	"categories": [
 		"Other"
