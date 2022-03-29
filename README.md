@@ -90,8 +90,8 @@ Except that it won't have access to global scope, because it is wrapped in a str
 [//]: # "Anchor point"
 
     
-## context : ScriptContext
-You will be using this object to get the target file, create new output files, and possibly animations.
+## context : MacroContext
+You will be using this object to edit the target file, and possibly create new output files.
 
 
 

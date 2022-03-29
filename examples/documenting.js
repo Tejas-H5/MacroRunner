@@ -46,8 +46,8 @@ ${plans.map((plan) => `- ${plan}`).join("\n")}
 
 const documentation = [
     {
-        heading: "context : ScriptContext",
-        desc: `You will be using this object to get the target file, create new output files, and possibly animations.`,
+        heading: "context : MacroContext",
+        desc: `You will be using this object to edit the target file, and possibly create new output files.`,
         plans: [`Some way to open files in the workspace by name/glob and make changes to them`],
         objectName: "context",
         methods: [
