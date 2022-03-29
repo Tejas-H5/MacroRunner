@@ -4,6 +4,7 @@ import MacroContext from "./macroContext";
 import { createIntervalTimeoutFunctions } from "./intervalTimeout";
 import { replaceAllFile } from "./textEditorUtil";
 import { containsWhileLoop } from "./sourceUtil";
+import * as path from "path";
 
 export const runMacroCommand = async () => {
     try {
@@ -91,14 +92,26 @@ If you aren't very sure that this code won't hang, ready up a Task Manager or co
     const timerContainer = createIntervalTimeoutFunctions();
     const allInjectedFunctions = [...timerContainer.functions];
 
+    let rootDir: string | undefined = undefined;
+    if (
+        vscode.workspace.workspaceFolders !== undefined &&
+        vscode.workspace.workspaceFolders.length > 0
+    ) {
+        rootDir = vscode.workspace.workspaceFolders[0].uri.fsPath;
+    } else if (!targetEditor.document.isUntitled) {
+        rootDir = path.dirname(targetEditor.document.uri.fsPath);
+    }
+
     // actually run the macro
     try {
         const macroFunction = Function(`
           "use strict";
-          return (async (context, debug, ${allInjectedFunctions.map((o) => o.name).join(",")}) => {
+          return (async (context, debug, require, rootDir, ${allInjectedFunctions
+              .map((o) => o.name)
+              .join(",")}) => {
               ${code}
           });`)();
-        await macroFunction(ctx, debug, ...allInjectedFunctions);
+        await macroFunction(ctx, debug, require, rootDir, ...allInjectedFunctions);
     } catch (e: any) {
         showErrors(e);
         return;

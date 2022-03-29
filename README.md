@@ -76,7 +76,7 @@ You can see what this call looks like for yourself `runmacroCommand.ts`, if that
 For those of you who didn't peer at the source code, think of it as basically looking something like this:
 
 ```javascript
-const runmacro = (context, debug, ...injectedFunctions) => {
+const runmacro = (context, debug, ...injectedObjects) => {
     // your macro code is copy-pasted here, and has access to all the injected objects above
 }
 ```
@@ -140,8 +140,10 @@ Possible additions:
 ## file : EditableFile
 This is the object that you will use to edit a file. 
 Note that you aren't editing the actual document, rather, you
-are making changes to a normal javascript string, and the extension will replace all text in the target document with the new text after the macro has ran.
+are making changes to a normal javascript string, and the extension will replace all text in the 
+target document with the new text after the macro has ran.
 I've also added a bunch of string manipulation utility functions that I found useful.
+`replaceMany`, `insertMany` and `removeMany` in particular are super useful.
 
 
 
@@ -209,6 +211,44 @@ The extension will then replay all of these undo points  onto the target documen
 
 <details>
 <summary>
+    <code class="Language-typescript"> file.replaceMany(ranges: [number, number][], strings: string[]) -> number[][]</code></p>
+
+</summary>
+
+> Replaces all specified ranges in the text with the corresponding string.  Modulo will be used to loop through strings if fewer strings than ranges are provided.  It then returns all the new range positions. 
+Overlapping ranges will throw an exception. 
+The ranges will also be returned in sorted order based on their starting point, as this is a side-effect of checking for overlapping ranges.
+
+</details>
+
+
+
+<details>
+<summary>
+    <code class="Language-typescript"> file.removeMany(ranges: [number, number][]) -> number[][]</code></p>
+
+</summary>
+
+> Short for `replaceMany(ranges, [""])`
+
+</details>
+
+
+
+<details>
+<summary>
+    <code class="Language-typescript"> file.insertMany(positions: [number][], strings: string[]) -> number[]</code></p>
+
+</summary>
+
+> Short for `replaceMany(positions.map(x => [x,x]), strings)`
+
+</details>
+
+
+
+<details>
+<summary>
     <code class="Language-typescript"> file.matchAllArray(expr: RegExp | string) -> RegExpMatchArray[]</code></p>
 
 </summary>
@@ -250,44 +290,6 @@ The extension will then replay all of these undo points  onto the target documen
 </summary>
 
 > Same as JavaScript's string.indexOf, but you can use regex
-
-</details>
-
-
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.replaceMany(ranges: [number, number][], strings: string[]) -> number[][]</code></p>
-
-</summary>
-
-> Replaces all specified ranges in the text with the corresponding string.  Modulo will be used to loop through strings if fewer strings than ranges are provided.  It then returns all the new range positions. 
-Overlapping ranges will throw an exception. 
-The ranges will also be returned in sorted order based on their starting point, as this is a side-effect of checking for overlapping ranges.
-
-</details>
-
-
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.removeMany(ranges: [number, number][]) -> number[][]</code></p>
-
-</summary>
-
-> Short for replaceMany(ranges, [""])
-
-</details>
-
-
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.insertMany(positions: [number][]) -> number[]</code></p>
-
-</summary>
-
-> Short for replaceMany(ranges, [""])
 
 </details>
 
@@ -396,8 +398,32 @@ But I have no idea how to do this.
 Any PRers?
 
     
-## ...injectedMethods
+## ...injectedObjects
 These are methods that have been injected for convenience, or to override the normal JavaScript method for whatever reason.
+
+
+
+<details>
+<summary>
+    <code class="Language-typescript"> rootDir:string</code></p>
+
+</summary>
+
+> Use this to get the project root fsPath. This will fallback to the document's folder if no folder is open, and then fallback to being `undefined` if the macro is being run on an untitled file.
+
+</details>
+
+
+
+<details>
+<summary>
+    <code class="Language-typescript"> require() -> module</code></p>
+
+</summary>
+
+> JavaScript's require function, untouched. Use it to require whatever modules you need
+
+</details>
 
 
 

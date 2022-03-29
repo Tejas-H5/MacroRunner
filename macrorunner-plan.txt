@@ -1,39 +1,30 @@
 TODO:
 - Add features
-	- write documentation
-		- ctx
-			- EditableFile
-		- debug
-		- timerContainer
-		-> improve docs
-		
-	-> files.walk(dir)
-
+	- some way to interact with any currently open file, and to write more files
+		- eh I cant be bothered. More projects to do, and this extension was mainly just so that I could quickly run some hacky script on a file I have open that I will never use again. Particularly, stuff like feeding an array of [string, string] to search and replace that takes a while manually
+			- allow importing of modules with require, and allow some way to know the project directory so people can do this themselves if they really need to
 
 	-* Mitigate stack-overflows
 
 	- save behaviour needs to switch to the saved version of the file
 	
 	- Create as few new API methods as needed
-		- matchNext
-			-* matchPrev (actually harder than I thought to make it efficient.)	
+		
+			
 	
 	- rename batchInsert back to insert, and add type checking to overload behaviour
-		- aaaa I dont know how to do this and please the type checker. going to just rename batchX methods to XMany for now
+		- I dont know how to do this and please the type checker. going to just rename batchX methods to XMany for now
 
 - unit tests to write:
 
-- Rename macrorunner to ScriptRunner, as this makes more sense. This extension is running scripts on text, not executing keypress macros
-	- but there are a lot of other extensions called ScriptRunner. rename back to macroRunner
-	
 
 - do manual tests, create folder for all examples (we cant unit test these easily)
 	-* setTimeout error handling
 
 
-- Low priority backlog:
+- Low priority backlog - Any pull requesters ?:
+	- matchPrev (actually harder than I thought to make it efficient.)	
 	- mitigate infinite loops (yes this happened)
-		-* Investigate javascript new thread + pthread_kill
-			( any PRers ? )
-	-* detect keyboard input ( any PRers? )
-	-* do keyboard input (any PRers? )
+		- Investigate javascript new thread + pthread_kill
+	- detect keyboard input
+	- do keyboard input

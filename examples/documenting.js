@@ -75,8 +75,10 @@ See the GOL example to see how to use`,
         heading: "file : EditableFile",
         desc: `This is the object that you will use to edit a file. 
 Note that you aren't editing the actual document, rather, you
-are making changes to a normal javascript string, and the extension will replace all text in the target document with the new text after the macro has ran.
-I've also added a bunch of string manipulation utility functions that I found useful.`,
+are making changes to a normal javascript string, and the extension will replace all text in the 
+target document with the new text after the macro has ran.
+I've also added a bunch of string manipulation utility functions that I found useful.
+\`replaceMany\`, \`insertMany\` and \`removeMany\` in particular are super useful.`,
         plans: ["`matchPrev(regExp)`. But making this efficient seems hard. Any PRers?"],
         objectName: "file",
         methods: [
@@ -103,6 +105,20 @@ If this is a target document referring to an actual open document, it will conta
 The extension will then replay all of these undo points  onto the target document before the final output, so that you can undo/redo between them - possibly for debugging purposes. `,
             },
             {
+                name: "replaceMany(ranges: [number, number][], strings: string[]) -> number[][]",
+                desc: `Replaces all specified ranges in the text with the corresponding string.  Modulo will be used to loop through strings if fewer strings than ranges are provided.  It then returns all the new range positions. 
+Overlapping ranges will throw an exception. 
+The ranges will also be returned in sorted order based on their starting point, as this is a side-effect of checking for overlapping ranges.`,
+            },
+            {
+                name: "removeMany(ranges: [number, number][]) -> number[][]",
+                desc: 'Short for `replaceMany(ranges, [""])`',
+            },
+            {
+                name: "insertMany(positions: [number][], strings: string[]) -> number[]",
+                desc: "Short for `replaceMany(positions.map(x => [x,x]), strings)`",
+            },
+            {
                 name: "matchAllArray(expr: RegExp | string) -> RegExpMatchArray[]",
                 desc: `Short for \`Array.from(file.getText.matchAll(expr))\``,
             },
@@ -118,20 +134,7 @@ The extension will then replay all of these undo points  onto the target documen
                 name: "matchNext(expr: RegExp | string, position: number = 0) -> RegExpMatchArray",
                 desc: `Same as JavaScript's string.indexOf, but you can use regex`,
             },
-            {
-                name: "replaceMany(ranges: [number, number][], strings: string[]) -> number[][]",
-                desc: `Replaces all specified ranges in the text with the corresponding string.  Modulo will be used to loop through strings if fewer strings than ranges are provided.  It then returns all the new range positions. 
-Overlapping ranges will throw an exception. 
-The ranges will also be returned in sorted order based on their starting point, as this is a side-effect of checking for overlapping ranges.`,
-            },
-            {
-                name: "removeMany(ranges: [number, number][]) -> number[][]",
-                desc: 'Short for replaceMany(ranges, [""])',
-            },
-            {
-                name: "insertMany(positions: [number][]) -> number[]",
-                desc: 'Short for replaceMany(ranges, [""])',
-            },
+
             {
                 name: "replace(str: string, start: number, end: number)",
                 desc: `Short for \`file.text.substring(0, start) + str + file.text.substring(end)\``,
@@ -177,13 +180,21 @@ Any PRers?`,
         ],
     },
     {
-        heading: "...injectedMethods",
+        heading: "...injectedObjects",
         desc: `These are methods that have been injected for convenience, or to override the normal JavaScript method for whatever reason.`,
         plans: [
             `Low priority - Keyboard input. 
 Any PRers ?`,
         ],
         methods: [
+            {
+                name: "rootDir:string",
+                desc: "Use this to get the project root fsPath. This will fallback to the document's folder if no folder is open, and then fallback to being `undefined` if the macro is being run on an untitled file.",
+            },
+            {
+                name: "require() -> module",
+                desc: "JavaScript's require function, untouched. Use it to require whatever modules you need",
+            },
             {
                 name: "SetInterval(callback, milliseconds) -> NodeJS.Timeout, SetTimeout(callback, milliseconds) -> NodeJS.Timeout, ClearInterval(timeout: NodeJS.Timeout), ClearTimeout(timeout: NodeJS.Timeout),",
                 desc: `These are wrappers for the normal javascript methods that allow the extension to keep track of the TimerIDs so that it can await them. 

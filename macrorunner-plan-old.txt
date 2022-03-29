@@ -131,3 +131,37 @@ A way to automate boring tasks in vs-code
 - mitigate infinite loops (yes this happened)
 	- nothing can be done about them. I will make the program print a warning if it detects the word "while\(.+\)" somewhere in the code, and how they should start up task manager and end visual studio since there is no other known way to mitgate against them. I've also added some more code to make it a little smart, like regex that removes single/multiline comments, "'` strings and /regex/ objects before doing the check, but yeah
 		[or can it?]
+
+	
+- Rename macrorunner to ScriptRunner, as this makes more sense. This extension is running scripts on text, not executing keypress macros
+	- but there are a lot of other extensions called ScriptRunner, and I also don't think I would have found this extension when I was looking for macro extensions to do basically this. rename back to macroRunner
+		- typescript was renamed to typemacro
+		- javascript was renamed to javamacro
+		- description was renamed to demacroion
+		- subscription was renamed to submacroion
+
+
+	- write documentation
+		- ctx
+			- EditableFile
+		- debug
+		- timerContainer
+		- improve docs
+
+		- some way to interact with any currently open file, and to write more files
+			- make following changes to API:
+				-* Changes to MacroContext
+					-* move selectedRanges to the file itself
+					-* context.getFile("") to get the active file
+					-* context.getFile(path) to get a file in the actual directory. return undefined if it doesn't exist
+					- context.newFile("") to make new untitled file
+					- context.newFile(path) to make new file at path, throws if already exists
+					-* context.walkFiles(root=".", (file) -> void) to walk all files recursively from some dir
+					
+				-* changes to EditableFile 
+					- add variable filepath. 
+						untitled files will have null as their filepath.
+				-* changes to runMacroCommand
+					- files that have filepaths need to be updated.
+					- what if someone corrupts their entire folder from this?
+						- that's their fault. These functions can be super usefull
