@@ -1,29 +1,33 @@
 
 # MacroRunner
-Allows you to use JavaScript to automate the editing of text documents, and is designed to be as simple to use as possible. Extremely useful to automate some simple text editing tasks that are hard to quickly do using the existing visual studio commands.
+Originally a quick way to make edits to a single document using some disposable JavaScript. However, because it allows you to run arbitrary JavaScript code and import any module with `require`, it can probably do a lot more. I have mainly been using it to do menial stuff like regex find and replacing using string arrays as input data, and using a series of regex + indexOf string operations to extract various tokens from source code - anything that would be trivial with 5 min of code but would take a long time to do manually.
 
-Use the `MacroRunner: New Macro` command from the `Ctrl+Shift+P` menu to create a new macro. The default macro template will open in a text editor to the side of whatever you're editing. 
+Use the `New Macro` command from the `Ctrl+Shift+P` menu to create a new macro. The default macro template will open in a text editor to the side of whatever you're editing. 
 
-Write your macro in this editor. For example, here is a simple script that increments all the chars in a document by 1:
+Then, write your macro. For example, here is a simple script that increments all the chars in a document by 1:
 
 ```javascript
 // macro
-
+// get a description of the currently open file
 const file = context.getFile();
 
+// Make edits to the text using standard javascript
 const cipherOffset = 1;
 const stringBuilder = []
-
-for(let i = 0; i < file.text.length; i++) {
+for (let i = 0; i < file.text.length; i++) {
     stringBuilder.push(String.fromCharCode(file.text.charCodeAt(i) + cipherOffset));
 }
 
+// does not set the text of the document immediately, but rather
+// it tells the extension what edits should be made, and they get 
+// applied after the macro finishes running.
 file.setText(stringBuilder.join(""));
 ```
+(Find more examples in the `examples` folder)
 
-When your macro is ready, run it with the `MacroRunner: Run macro` command. This command will attempt to find a visible editor with text that starts with '// macro', and then run that text as JavaScript code that will have access to text in the target document. If exactly two editors are open, then the editor that didn't have the macro in it is the tarteg. If more than two are open, then the document that currently has focus will be the target document. <b> !!! This extension makes no effort to validate the security of the code in a macro, as it assumes you are writing the code yourself. Only copy-paste and run macros from the internet if you know for sure that don't have malicious code in them. !!! </b>
+When your macro is ready, run it with the `Run macro` command. This command will only work if two or more editors are visible, and one of them contains a valid macro. If exactly two editors are open, then the extension will simply run the code from one editor on the other editor. If more than two editors are open, then one of the editors will need to have focus, so that the extension knows where to apply the macro.
 
-Use the `MacroRunner: Save macro` command to save this macro to global storage for later, and then re-open this macro again whenever you want with the `MacroRunner: Load macro` command. The `MacroRunner: Delete macro` and `MacroRunner: Open macros directory` commands also exist, do exactly what you think they do.
+Use the `Save macro` command to save this macro to global storage for later, and then re-open this macro again whenever you want with the `Load macro` command. The `Delete macro` and `Open macros directory` commands also exist, do exactly what you think they do.
 
 # Other use cases
 
@@ -45,16 +49,17 @@ It is also possible to make changes to a document based on the current cursor po
 
 Some basic text based animation is also supported, although not the main focus. Take a look at the `GOL.js` examples in the `examples` folder, and then read the documentation on `context.outputImmediate` and `loop` to understand how it works under the hood.
 
+# Features I won't add:
+I won't be adding any feature that causes the API to become more complicated than it already is. 
+For instance, utility functions that wrap vscode's filesystem API to access and write to any workspace file would necessarily need to be `async`, and I don't particularly like writing `await` in front of every single function when to avoid any bugs that I would get from forgetting an `await` (but if you really wanted to do something like this, checkout the `projectDirectory` example in the examples folder).
+
+
 # Possible additional features
 
-- The ability to select a document from the editor by name
-- The ability to run a macro on multiple documents at once
-- The ability to run a macro multiple times at once
-- Adding key-binds to a macro
-
+I am done with this project and want to work on new ones. But if you actually use this and need more features, then feel free to create an issue with your feature proposal and I will probably read that and add it here.
 # Known issues
 
-- stack-overflow exceptions will not be silently ignored, and will cause the edtior to crash. E.g something like this will cause mysterious errors till you notice the tiny typo and kick yourself:
+Stack-overflow exceptions will be silently ignored, and will cause the edtior to crash. E.g something like this may frustrate you to no end till you notice the typo and kick yourself:
 ```javascript
 const stringBuilder = []
 
