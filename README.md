@@ -95,45 +95,27 @@ You will be using this object to edit the target file, and possibly create new o
 
 
 
-<details>
-<summary>
-    <code class="Language-typescript"> context.getFile(index?=0) -> EditableFile</code></p>
-
-</summary>
+### context.getFile(index?=0) -> EditableFile
 
 > Use `getFile()` to get the currently active file as an `EditableFile` object. 
 The index is zero by default, which points to the target file. 
 An index greater than 0 can be provided to access files that were newly created with `newFile`.
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> context.newFile(text="") -> EditableFile</code></p>
-
-</summary>
+### context.newFile(text="") -> EditableFile
 
 > Use `newFile()` to create a new output file as an `EditableObject` object. 
 Text can be provided to set it's initial text.
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript">async context.outputImmediate(index=0)</code></p>
-
-</summary>
+### async context.outputImmediate(index=0)
 
 > Use `outputImmediate()` to push the current text in a file directly to the target file immediately.
 This has no real use other than novelty, in that it can be used along with `setInterval`/`loop` to make animations.
 There was no real reason for me to add this, or the interval method overrides, I just did it for fun.
 See the GOL example to see how to use
-
-</details>
 
 
 
@@ -152,211 +134,109 @@ I've also added a bunch of string manipulation utility functions that I found us
 
 
 
-<details>
-<summary>
-    <code class="Language-typescript"> file.text : string</code></p>
-
-</summary>
+### file.text : string
 
 > The text of this document. 
 If this is a target document referring to an actual open document, it will contain text as well as information about the current selection.
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.initialSelectedRanges : [number, number][]</code></p>
-
-</summary>
+### file.initialSelectedRanges : [number, number][]
 
 > Get all of the selected ranges in the current document
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.newSelectedRanges : [number, number][]</code></p>
-
-</summary>
+### file.newSelectedRanges : [number, number][]
 
 > New ranges that will be selected after the macro is run. Make the start and end the same in [start,end] to get a position instead of a range.
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.setText(newText:string)</code></p>
-
-</summary>
+### file.setText(newText:string)
 
 > Same as `file.text = newText`, but will throw an error if the object you're passing isn't a `typeof 'string'` or `instanceof String`.
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.markUndoPoint()</code></p>
-
-</summary>
+### file.markUndoPoint()
 
 > Save the value of file.text as an 'undo point'. 
 The extension will then replay all of these undo points  onto the target document before the final output, so that you can undo/redo between them - possibly for debugging purposes. 
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.replaceMany(ranges: [number, number][], strings: string[]) -> number[][]</code></p>
-
-</summary>
+### file.replaceMany(ranges: [number, number][], strings: string[]) -> number[][]
 
 > Replaces all specified ranges in the text with the corresponding string.  Modulo will be used to loop through strings if fewer strings than ranges are provided.  It then returns all the new range positions. 
 Overlapping ranges will throw an exception. 
 The ranges will also be returned in sorted order based on their starting point, as this is a side-effect of checking for overlapping ranges.
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.removeMany(ranges: [number, number][]) -> number[][]</code></p>
-
-</summary>
+### file.removeMany(ranges: [number, number][]) -> number[][]
 
 > Short for `replaceMany(ranges, [""])`
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.insertMany(positions: [number][], strings: string[]) -> number[]</code></p>
-
-</summary>
+### file.insertMany(positions: [number][], strings: string[]) -> number[]
 
 > Short for `replaceMany(positions.map(x => [x,x]), strings)`
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.matchAllArray(expr: RegExp | string) -> RegExpMatchArray[]</code></p>
-
-</summary>
+### file.matchAllArray(expr: RegExp | string) -> RegExpMatchArray[]
 
 > Short for `Array.from(file.getText.matchAll(expr))`
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.matchAllPositions(expr: RegExp | string) -> number[]</code></p>
-
-</summary>
+### file.matchAllPositions(expr: RegExp | string) -> number[]
 
 > Same as matchAllArray but collects all match indices
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.matchAllRanges(expr: RegExp | string) -> [number, number][]</code></p>
-
-</summary>
+### file.matchAllRanges(expr: RegExp | string) -> [number, number][]
 
 > Same as matchAllArray but collects all ranges.  A range is defined as a tuple [start,end] where start is the start of the match (inclusive) and end is the end of a match (exclusive, 1 after the end of a match).
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.matchNext(expr: RegExp | string, position: number = 0) -> RegExpMatchArray</code></p>
-
-</summary>
+### file.matchNext(expr: RegExp | string, position: number = 0) -> RegExpMatchArray
 
 > Same as JavaScript's string.indexOf, but you can use regex
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.replace(str: string, start: number, end: number)</code></p>
-
-</summary>
+### file.replace(str: string, start: number, end: number)
 
 > Short for `file.text.substring(0, start) + str + file.text.substring(end)`
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.insert(str: string, position: number)</code></p>
-
-</summary>
+### file.insert(str: string, position: number)
 
 > Short for `replace(str, position, position)`
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.remove(start: number, end: number)</code></p>
-
-</summary>
+### file.remove(start: number, end: number)
 
 > Short for `replace('', start, end);`
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.indexAfter(str: string, position: number = 0)</code></p>
-
-</summary>
+### file.indexAfter(str: string, position: number = 0)
 
 > Short for `text.indexOf(str, position) + str.length;`
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> file.lastIndexAfter(str: string, position: number = -1)</code></p>
-
-</summary>
+### file.lastIndexAfter(str: string, position: number = -1)
 
 > Same as indexOf but in the reverse direction, and 1 index after the string to remain consistent with indexAfter
-
-</details>
 
 
 
@@ -370,27 +250,15 @@ This object is used to log things.
 
 
 
-<details>
-<summary>
-    <code class="Language-typescript">async context.info(message)</code></p>
-
-</summary>
+### async context.info(message)
 
 > Pushes an info message notification in VS-Code
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript">async context.error(message)</code></p>
-
-</summary>
+### async context.error(message)
 
 > Pushes an error message notification in VS-Code
-
-</details>
 
 
 
@@ -408,52 +276,28 @@ These are methods that have been injected for convenience, or to override the no
 
 
 
-<details>
-<summary>
-    <code class="Language-typescript"> rootDir:string</code></p>
-
-</summary>
+### rootDir:string
 
 > Use this to get the project root fsPath. This will fallback to the document's folder if no folder is open, and then fallback to being `undefined` if the macro is being run on an untitled file.
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> require() -> module</code></p>
-
-</summary>
+### require() -> module
 
 > JavaScript's require function, untouched. Use it to require whatever modules you need
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> SetInterval(callback, milliseconds) -> NodeJS.Timeout, SetTimeout(callback, milliseconds) -> NodeJS.Timeout, ClearInterval(timeout: NodeJS.Timeout), ClearTimeout(timeout: NodeJS.Timeout),</code></p>
-
-</summary>
+### SetInterval(callback, milliseconds) -> NodeJS.Timeout, SetTimeout(callback, milliseconds) -> NodeJS.Timeout, ClearInterval(timeout: NodeJS.Timeout), ClearTimeout(timeout: NodeJS.Timeout),
 
 > These are wrappers for the normal javascript methods that allow the extension to keep track of the TimerIDs so that it can await them. 
 Doing this allows errors in these methods to be correctly displayed as error messages and not be silently ignored.
 
-</details>
 
 
-
-<details>
-<summary>
-    <code class="Language-typescript"> loop(callback(count) -> bool, milliseconds, loopCount=undefined|number)</code></p>
-
-</summary>
+### loop(callback(count) -> bool, milliseconds, loopCount=undefined|number)
 
 > A wrapper for the setInterval method that allows for a loop counter, and accepts a callback  That can return `true` to break out of the loop and `false` 
-
-</details>
 
 
 

@@ -11,17 +11,9 @@ const createFunctionSection = ({ objectName, name, desc }) => {
 
     return `
 
-<details>
-<summary>
-    <code class="Language-typescript">${async ? "async" : ""} ${
-        objectName ? objectName + "." : ""
-    }${name}</code></p>
-
-</summary>
+### ${async ? "async " : ""}${objectName ? objectName + "." : ""}${name}
 
 > ${desc}
-
-</details>
 
 `;
 };
