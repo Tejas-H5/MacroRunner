@@ -56,7 +56,11 @@ For instance, utility functions that wrap vscode's filesystem API to access and 
 
 # Possible additional features
 
-I am done with this project and want to work on new ones. But if you actually use this and need more features, then feel free to create an issue with your feature proposal and I will probably read that and add it here.
+So it turns out that I am using this extension a lot more than even I thought I would. There are a few things that I now need to add:
+
+- Some way to create an output and log it somewhere. We can output text to a new file, but I would like to be able to output to the same file over and over
+- Some way to do debug logging. the vscode error messages aren't enough. Probably to a file that persists in global storage
+
 # Known issues
 
 Stack-overflow exceptions will be silently ignored, and will cause the edtior to crash. E.g something like this may frustrate you to no end till you notice the typo and kick yourself:
