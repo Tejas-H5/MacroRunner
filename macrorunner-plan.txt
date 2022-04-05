@@ -10,7 +10,8 @@ TODO:
 	
 	- Create as few new API methods as needed
 		
-			
+	-* needs better logging features
+	-* should create output even if empty
 	
 	- rename batchInsert back to insert, and add type checking to overload behaviour
 		- I dont know how to do this and please the type checker. going to just rename batchX methods to XMany for now

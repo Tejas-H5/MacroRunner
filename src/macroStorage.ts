@@ -2,7 +2,7 @@ import { TextEncoder } from "util";
 import * as vscode from "vscode";
 import { macrosUri } from "./extension";
 import { replaceAll } from "./textEditorUtil";
-import { getEditorWithMacroFile } from "./runMacroCommand";
+import { getAvailableEditors, getEditorWithMacroFile } from "./editorFinding";
 
 const ensureMacrosDir = async () => {
     if (macrosUri === null) {
@@ -157,22 +157,28 @@ const showDocument = async (
     document: vscode.TextDocument,
     cursorIndex: number | undefined = undefined
 ) => {
-    let visibleEditors = vscode.window.visibleTextEditors;
-    await vscode.window
-        .showTextDocument(
-            document,
-            visibleEditors.length === 1 ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active
-        )
-        .then((editor) => {
-            if (cursorIndex === undefined) {
-                cursorIndex = editor.document.getText().length - 1;
-            }
+    let visibleEditors = getAvailableEditors();
+    const activeTextEditor = vscode.window.activeTextEditor;
+    let column: vscode.ViewColumn;
+    if (visibleEditors.length === 1) {
+        column = vscode.ViewColumn.Beside;
+    } else if (activeTextEditor && activeTextEditor.viewColumn && visibleEditors.length > 1) {
+        // columns are 1-indexed
+        column = (activeTextEditor.viewColumn % visibleEditors.length) + 1;
+    } else {
+        column = vscode.ViewColumn.Active;
+    }
 
-            editor.selection = new vscode.Selection(
-                editor.document.positionAt(cursorIndex),
-                editor.document.positionAt(cursorIndex)
-            );
-        });
+    await vscode.window.showTextDocument(document, column).then((editor) => {
+        if (cursorIndex === undefined) {
+            cursorIndex = editor.document.getText().length - 1;
+        }
+
+        editor.selection = new vscode.Selection(
+            editor.document.positionAt(cursorIndex),
+            editor.document.positionAt(cursorIndex)
+        );
+    });
 };
 
 export const newMacroCommand = async () => {

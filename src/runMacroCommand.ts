@@ -5,6 +5,56 @@ import { createIntervalTimeoutFunctions } from "./intervalTimeout";
 import { replaceAllFile } from "./textEditorUtil";
 import { containsWhileLoop } from "./sourceUtil";
 import * as path from "path";
+import { getEditorWithMacroFile, getEditorWithTargetFile } from "./editorFinding";
+import { TextDecoder, TextEncoder } from "util";
+
+export const runMacroCommandWithFilePicker = async () => {
+    try {
+        const macroEditor = getEditorWithMacroFile();
+
+        let uri = undefined;
+        if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0]) {
+            uri = vscode.workspace.workspaceFolders[0].uri;
+        }
+
+        const files = await vscode.window.showOpenDialog({
+            canSelectFiles: true,
+            canSelectFolders: false,
+            canSelectMany: false,
+            defaultUri: uri,
+        });
+
+        if (!files || files.length === 0) {
+            return;
+        }
+
+        const newDocument = await vscode.workspace.openTextDocument({
+            language: "text",
+            content: "",
+        });
+
+        const targetEditor = await vscode.window.showTextDocument(newDocument);
+
+        const bytes = await vscode.workspace.fs.readFile(files[0]);
+        const enc = new TextDecoder();
+        const initialText = enc.decode(bytes);
+
+        const executionResult = await runMacro(macroEditor, targetEditor, initialText);
+
+        if (!executionResult) {
+            return;
+        }
+
+        await applyMacroContextResult(executionResult, targetEditor);
+
+        vscode.window.showInformationMessage(
+            "VSCode extensions can't non-destructively edit anything larger than 50mb in size, so the output will go to a new untitled document for now. " +
+                "For some reason, if the document is untitled, you can still use the normal Run Macro command on it even though it has the same amount of text. "
+        );
+    } catch (err: any) {
+        vscode.window.showErrorMessage(err.message);
+    }
+};
 
 export const runMacroCommand = async () => {
     try {
@@ -23,59 +73,11 @@ export const runMacroCommand = async () => {
     }
 };
 
-export const getEditorWithMacroFile = () => {
-    let visibleEditors = vscode.window.visibleTextEditors;
-    let macroEditors = visibleEditors.filter((editor) => {
-        const code = editor.document.getText();
-        const containsSafetyCatch = code.startsWith("// macro");
-
-        return containsSafetyCatch;
-    });
-
-    if (macroEditors.length === 0) {
-        throw new Error(
-            "Make sure your macro starts with '// macro' (this is a safety catch), or that you have the right file visible"
-        );
-    }
-
-    if (macroEditors.length > 1) {
-        throw new Error(
-            "Found multiple macros, make sure that only the macro you want to run is visible."
-        );
-    }
-
-    // sometimes copy-pasted macro code can resolve to c/c++
-    if (macroEditors[0].document.languageId !== "javascript") {
-        vscode.languages.setTextDocumentLanguage(macroEditors[0].document, "javascript");
-    }
-
-    return macroEditors[0];
-};
-
-const getEditorWithTargetFile = (macroEditor: vscode.TextEditor) => {
-    let editor = vscode.window.activeTextEditor;
-    if (editor && editor !== macroEditor) return editor;
-
-    const visibleEditors = vscode.window.visibleTextEditors;
-    let visibleTextEditors = new Array<vscode.TextEditor>();
-
-    for (const visibleEditor of visibleEditors) {
-        // todo: check if editor is actually readonly
-        if (true) {
-            visibleTextEditors.push(visibleEditor);
-        }
-    }
-
-    if (visibleEditors.length === 2 || editor === undefined) {
-        return visibleEditors[0] === macroEditor ? visibleEditors[1] : visibleEditors[0];
-    } else {
-        throw new Error(
-            "When you have more than two other editors open, bring focus to the one you want to run the macro in"
-        );
-    }
-};
-
-const runMacro = async (macroEditor: vscode.TextEditor, targetEditor: vscode.TextEditor) => {
+const runMacro = async (
+    macroEditor: vscode.TextEditor,
+    targetEditor: vscode.TextEditor,
+    targetText: string | undefined = undefined
+) => {
     const code = macroEditor.document.getText();
     if (containsWhileLoop(code)) {
         // wait for the user to close the warning before proceeding anyway
@@ -87,7 +89,8 @@ If you aren't very sure that this code won't hang, ready up a Task Manager or co
     }
 
     // prepare objects to feed to the macro
-    const ctx = new MacroContext(targetEditor);
+    let ctx = new MacroContext(targetEditor, targetText);
+
     const debug = new DebugContext();
     const timerContainer = createIntervalTimeoutFunctions();
     const allInjectedFunctions = [...timerContainer.functions];

@@ -1,6 +1,6 @@
 
-# MacroRunner
-Originally a quick way to make edits to a single document using some disposable JavaScript. However, because it allows you to run arbitrary JavaScript code and import any module with `require`, it can probably do a lot more. I have mainly been using it to do menial stuff like regex find and replacing using string arrays as input data, and using a series of regex + indexOf string operations to extract various tokens from source code - anything that would be trivial with 5 min of code but would take a long time to do manually.
+# Macro Runner
+A quick way to make edits to a single document using some disposable JavaScript. Since you can also run arbitrary JavaScript code and you are working with a string instead of vscode's editBuilder API, the sky is the limit. 
 
 Use the `New Macro` command from the `Ctrl+Shift+P` menu to create a new macro. The default macro template will open in a text editor to the side of whatever you're editing. 
 
@@ -8,26 +8,25 @@ Then, write your macro. For example, here is a simple script that increments all
 
 ```javascript
 // macro
-// get a description of the currently open file
 const file = context.getFile();
 
-// Make edits to the text using standard javascript
 const cipherOffset = 1;
 const stringBuilder = []
 for (let i = 0; i < file.text.length; i++) {
     stringBuilder.push(String.fromCharCode(file.text.charCodeAt(i) + cipherOffset));
 }
 
-// does not set the text of the document immediately, but rather
-// it tells the extension what edits should be made, and they get 
-// applied after the macro finishes running.
 file.setText(stringBuilder.join(""));
 ```
 (Find more examples in the `examples` folder)
 
-When your macro is ready, run it with the `Run macro` command. This command will only work if two or more editors are visible, and one of them contains a valid macro. If exactly two editors are open, then the extension will simply run the code from one editor on the other editor. If more than two editors are open, then one of the editors will need to have focus, so that the extension knows where to apply the macro.
+When your macro is ready, run it with the `Run macro` command. This command attempts to find a visible editor with a macro and a target editor. If both are found, the code in the macro editor will be run on the target editor. If exactly two editors are open, then the target editor is the one without the macro. If more than two editors are open, then the target is the one with the cursor in it.
 
 Use the `Save macro` command to save this macro to global storage for later, and then re-open this macro again whenever you want with the `Load macro` command. The `Delete macro` and `Open macros directory` commands also exist, do exactly what you think they do.
+
+## Limitations
+
+You will find that the `Run Macro` command simply doesn't work for files that are larger than 50mb. At the moment, all VSCode extensions are [unable to interact with files > 50mb in size](https://github.com/microsoft/vscode/issues/31078), so you will have to use the `Run Macro (For large files > 50mb)` command. This is identical to the `Run Macro` command, but it will ask you to manually open a file, and then rather than editing the file itself, it will bring the result into a new untitled document.
 
 # Other use cases
 

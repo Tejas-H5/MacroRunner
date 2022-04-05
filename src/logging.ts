@@ -1,3 +1,4 @@
+import { table } from "console";
 import * as vscode from "vscode";
 
 export default class DebugContext {
@@ -17,10 +18,18 @@ export default class DebugContext {
 }
 
 export const compactStack = (stack: string) => {
-    let earlyCutoff = stack.indexOf("at eval (eval at runMacroCommand");
-    stack = stack.substring(0, earlyCutoff);
-    stack +=
-        "\n  <The rest of the stack is internal to the MacroRunner codebase and not relevant to you>";
+    let earlyCutoff = stack.indexOf("at eval (eval at runMacro");
+    let earlyEnd = earlyCutoff + 1000;
+    if (stack.length < earlyEnd) {
+        earlyEnd = stack.length;
+        stack += "...";
+    }
+
+    stack =
+        stack.substring(0, earlyCutoff) +
+        "\n\n<The rest of the stack is probably internal to the MacroRunner codebase and not relevant to your error>\n\n" +
+        stack.substring(earlyCutoff, earlyEnd);
+
     stack = stack.replace(/\w+:.+\\/g, ".../");
     stack = stack.replace(/\t/g, "    ");
     return stack;

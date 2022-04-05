@@ -10,9 +10,15 @@ class MacroContext {
 
     readonly initialSelectedRanges: [number, number][];
 
-    constructor(editor: vscode.TextEditor) {
+    constructor(editor: vscode.TextEditor, initialText: string | undefined = undefined) {
         this.document = editor.document;
-        this.files = [new EditableFile(this.document.getText())];
+
+        if (initialText === undefined) {
+            this.files = [new EditableFile(this.document.getText())];
+        } else {
+            this.files = [new EditableFile(initialText)];
+        }
+
         this.editor = editor;
         this.initialSelectedRanges = editor.selections.map((s) => [
             this.document.offsetAt(s.start),
