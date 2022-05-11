@@ -4,9 +4,9 @@ import MacroContext from "./macroContext";
 import { createIntervalTimeoutFunctions } from "./intervalTimeout";
 import { replaceAllFile } from "./textEditorUtil";
 import { containsWhileLoop } from "./sourceUtil";
-import * as path from "path";
 import { getEditorWithMacroFile, getEditorWithTargetFile } from "./editorFinding";
 import { TextDecoder, TextEncoder } from "util";
+import * as stringUtil from "./stringUtil";
 
 export const runMacroCommandWithFilePicker = async () => {
     try {
@@ -93,28 +93,18 @@ If you aren't very sure that this code won't hang, ready up a Task Manager or co
 
     const debug = new DebugContext();
     const timerContainer = createIntervalTimeoutFunctions();
-    const allInjectedFunctions = [...timerContainer.functions];
-
-    let rootDir: string | undefined = undefined;
-    if (
-        vscode.workspace.workspaceFolders !== undefined &&
-        vscode.workspace.workspaceFolders.length > 0
-    ) {
-        rootDir = vscode.workspace.workspaceFolders[0].uri.fsPath;
-    } else if (!targetEditor.document.isUntitled) {
-        rootDir = path.dirname(targetEditor.document.uri.fsPath);
-    }
+    const allInjectedFunctions = [...timerContainer.functions, ...stringUtil.stringUtilFunctions];
 
     // actually run the macro
     try {
-        const macroFunction = Function(`
-          "use strict";
-          return (async (context, debug, require, rootDir, ${allInjectedFunctions
-              .map((o) => o.name)
-              .join(",")}) => {
-              ${code}
-          });`)();
-        await macroFunction(ctx, debug, require, rootDir, ...allInjectedFunctions);
+        const macroSource = `
+"use strict";
+return (async (context, debug, require, ${allInjectedFunctions.map((o) => o.name).join(",")}) => {
+    ${code}
+});`;
+
+        const macroFunction = Function(macroSource)();
+        await macroFunction(ctx, debug, require, ...allInjectedFunctions);
     } catch (e: any) {
         showErrors(e);
         return;
@@ -149,12 +139,20 @@ const applyMacroContextResult = async (ctx: MacroContext, targetEditor: vscode.T
         const changes = ctx.getFile(i);
         await replaceAllFile(changes, document, targetEditor.viewColumn, true);
 
-        const selections = changes.newSelectedRanges.map((range) => {
+        const filteredSelectedRanges = new Array<[number, number]>();
+        for (const range of changes.selectedRanges) {
+            if (!range) continue;
+
+            filteredSelectedRanges.push(range);
+        }
+
+        const vscodeSelections = filteredSelectedRanges.map((range) => {
             return new vscode.Selection(
                 document.positionAt(range[0]),
                 document.positionAt(range[1])
             );
         });
-        targetEditor.selections = selections;
+
+        targetEditor.selections = vscodeSelections;
     }
 };

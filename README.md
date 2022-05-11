@@ -74,7 +74,7 @@ for(let i = 0; i = file.text.length; i++) {
 
 # API Documentation / details
 
-One problem with this approach to macros is that even though you will be writing far less code that is far simpler, you won't get any autocomplete, so I have to write a bunch of documentation on all of the objects that I've injected (sigh). There may be functions that I omit due to them being too insignificant.
+One problem with this approach to macros is that even though you will be writing far less code that is far simpler, you won't get any autocomplete for injected objects, so I have to write a bunch of documentation (sigh). There may be functions that I omit due to them being too insignificant.
 
 ## Injected objects?
 
@@ -95,6 +95,12 @@ Except that it won't have access to global scope, because it is wrapped in a str
     
 ## context : MacroContext
 You will be using this object to edit the target file, and possibly create new output files.
+
+
+
+### context.rootDir:string
+
+> Use this to get the project root fsPath. This will fallback to the document's folder if no folder is open, and then fallback to being `undefined` if the macro is being run on an untitled file.
 
 
 
@@ -128,118 +134,43 @@ Possible additions:
 
     
 ## file : EditableFile
-This is the object that you will use to edit a file. 
-Note that you aren't editing the actual document, rather, you
-are making changes to a normal javascript string, and the extension will replace all text in the 
-target document with the new text after the macro has ran.
-I've also added a bunch of string manipulation utility functions that I found useful.
-`replaceMany`, `insertMany` and `removeMany` in particular are super useful.
+This is the object that you will use to interface between the macro and a text file in Visual Studio.. 
+Note that you aren't editing the actual text file, rather, you
+are making changes to a normal javascript object, and the extension will see those changes and make them in the real document after the
+macro is ran.
 
 
 
 ### file.text : string
 
-> The text of this document. 
-If this is a target document referring to an actual open document, it will contain text as well as information about the current selection.
+> The text in this file. Make changes to this in your macro. 
+Optionally use `setText` instead of `file.text=whatever`, which will throw an exception
+if you are passing in something that isn't a string.
 
 
 
-### file.initialSelectedRanges : [number, number][]
+### file.selectedRanges : [rangeStart: number, rangeEnd: number][]
 
-> Get all of the selected ranges in the current document
-
-
-
-### file.newSelectedRanges : [number, number][]
-
-> New ranges that will be selected after the macro is run. Make the start and end the same in [start,end] to get a position instead of a range.
+> The current ranges in the document that are selected. 
+Each number is a number index into the string.
+Changes to this array will be reflected in the document after the macro has finished running.
+If rangeStart and rangeEnd are both the same, you will have a cursor without anything selected. 
+If the range object is null, it will be ignored.
 
 
 
 ### file.setText(newText:string)
 
-> Same as `file.text = newText`, but will throw an error if the object you're passing isn't a `typeof 'string'` or `instanceof String`.
+> Same as `file.text = newText`, but will throw an exception if the object you're passing isn't a `typeof 'string'` or `instanceof String`.
+The other functions don't do this kind of type checking, I can't be bothered adding it.
 
 
 
 ### file.markUndoPoint()
 
 > Save the value of file.text as an 'undo point'. 
-The extension will then replay all of these undo points  onto the target document before the final output, so that you can undo/redo between them - possibly for debugging purposes. 
-
-
-
-### file.replaceMany(ranges: [number, number][], strings: string[]) -> number[][]
-
-> Replaces all specified ranges in the text with the corresponding string.  Modulo will be used to loop through strings if fewer strings than ranges are provided.  It then returns all the new range positions. 
-Overlapping ranges will throw an exception. 
-The ranges will also be returned in sorted order based on their starting point, as this is a side-effect of checking for overlapping ranges.
-
-
-
-### file.removeMany(ranges: [number, number][]) -> number[][]
-
-> Short for `replaceMany(ranges, [""])`
-
-
-
-### file.insertMany(positions: [number][], strings: string[]) -> number[]
-
-> Short for `replaceMany(positions.map(x => [x,x]), strings)`
-
-
-
-### file.matchAllArray(expr: RegExp | string) -> RegExpMatchArray[]
-
-> Short for `Array.from(file.getText.matchAll(expr))`
-
-
-
-### file.matchAllPositions(expr: RegExp | string) -> number[]
-
-> Same as matchAllArray but collects all match indices
-
-
-
-### file.matchAllRanges(expr: RegExp | string) -> [number, number][]
-
-> Same as matchAllArray but collects all ranges.  A range is defined as a tuple [start,end] where start is the start of the match (inclusive) and end is the end of a match (exclusive, 1 after the end of a match).
-
-
-
-### file.matchNext(expr: RegExp | string, position: number = 0) -> RegExpMatchArray
-
-> Same as JavaScript's string.indexOf, but you can use regex
-
-
-
-### file.replace(str: string, start: number, end: number)
-
-> Short for `file.text.substring(0, start) + str + file.text.substring(end)`
-
-
-
-### file.insert(str: string, position: number)
-
-> Short for `replace(str, position, position)`
-
-
-
-### file.remove(start: number, end: number)
-
-> Short for `replace('', start, end);`
-
-
-
-### file.indexAfter(str: string, position: number = 0)
-
-> Short for `text.indexOf(str, position) + str.length;`
-
-
-
-### file.lastIndexAfter(str: string, position: number = -1)
-
-> Same as indexOf but in the reverse direction, and 1 index after the string to remain consistent with indexAfter
+The extension will then replay all of these undo points onto the target document before the final output, 
+so that you can undo/redo between them - possibly for debugging purposes. 
 
 
 
@@ -253,13 +184,13 @@ This object is used to log things.
 
 
 
-### async context.info(message)
+### async debug.info(message)
 
 > Pushes an info message notification in VS-Code
 
 
 
-### async context.error(message)
+### async debug.error(message)
 
 > Pushes an error message notification in VS-Code
 
@@ -270,18 +201,98 @@ Possible additions:
 - Some way to log to a console of some sort. 
 I don't care to implement this for now because I can print text straight to the document, or use other debugging techniques
 - Breakpoints. 
-But I have no idea how to do this. 
+They would be awesome, but I have no idea how to add them. It may require a massive rewrite.
 Any PRers?
 
     
-## ...injectedObjects
-These are methods that have been injected for convenience, or to override the normal JavaScript method for whatever reason.
+## ...stringUtils
+These are utility methods that make string editing much easier.
 
 
 
-### rootDir:string
+### replaceMany(text:string, ranges: [number, number][], strings: string[]) -> [newText: string, new ranges: [number, number][]]
 
-> Use this to get the project root fsPath. This will fallback to the document's folder if no folder is open, and then fallback to being `undefined` if the macro is being run on an untitled file.
+> Replaces all specified ranges in the text with the corresponding string. Modulo will be used to loop through strings if fewer strings than ranges are provided.  It then returns all the new range positions. 
+Overlapping ranges will throw an exception. 
+The ranges will also be returned in sorted order based on their starting point, as this is a side-effect of checking for overlapping ranges
+
+
+
+### removeMany(text:string, ranges: [number, number][]) -> [newText: string, new ranges: [number, number][]]
+
+> Short for `replaceMany(ranges, [""])`
+
+
+
+### insertMany(text:string, positions: [number][], strings: string[]) -> [newText: string, new ranges: [number, number][]]
+
+> Short for `replaceMany(positions.map(x => [x,x]), strings)`
+
+
+
+### findAll(text:string, expr: RegExp | string) -> RegExpMatchArray[]
+
+> Short for `Array.from(file.getText.matchAll(expr))`
+
+
+
+### findAllPositions(text:string, expr: RegExp | string) -> number[]
+
+> Same as findAll but collects all match indices
+
+
+
+### findAllRanges(text:string, expr: RegExp | string) -> [number, number][]
+
+> Same as matchAllArray but collects all ranges.  A range is defined as a tuple [start: number,end: number] 
+where start is the start of the match (inclusive) and end is the end of a match (exclusive, 1 after the end of a match).
+
+
+
+### matchNext(text:string, expr: RegExp | string, position: number = 0) -> RegExpMatchArray
+
+> Same as JavaScript's string.indexOf, but you can use regex
+
+
+
+### replace(text:string, str: string, start: number, end: number)
+
+> Short for `file.text.substring(0, start) + str + file.text.substring(end)`
+
+
+
+### insert(text:string, str: string, position: number)
+
+> Short for `replace(str, position, position)`
+
+
+
+### remove(text:string, start: number, end: number)
+
+> Short for `replace('', start, end);`
+
+
+
+### indexAfter(text:string, str: string, position: number = 0)
+
+> Short for `text.indexOf(str, position) + str.length;`
+
+
+
+### lastIndexAfter(text:string, str: string, position: number = -1)
+
+> Same as indexOf but in the reverse direction, and 1 index after the string to remain consistent with indexAfter
+
+
+
+Possible additions: 
+
+- Low priority - Keyboard input. 
+Any PRers ?
+
+    
+## ...javascriptUtils
+These are normal javascript methods that have been directly injected, or overridden:
 
 
 
@@ -293,14 +304,15 @@ These are methods that have been injected for convenience, or to override the no
 
 ### SetInterval(callback, milliseconds) -> NodeJS.Timeout, SetTimeout(callback, milliseconds) -> NodeJS.Timeout, ClearInterval(timeout: NodeJS.Timeout), ClearTimeout(timeout: NodeJS.Timeout),
 
-> These are wrappers for the normal javascript methods that allow the extension to keep track of the TimerIDs so that it can await them. 
-Doing this allows errors in these methods to be correctly displayed as error messages and not be silently ignored.
+> These are actually wrappers for the normal javascript methods that interop better with this extension.
+It behaves exactly the same as the javascript method.
 
 
 
 ### loop(callback(count) -> bool, milliseconds, loopCount=undefined|number)
 
-> A wrapper for the setInterval method that allows for a loop counter, and accepts a callback  That can return `true` to break out of the loop and `false` 
+> A wrapper for the setInterval method that allows for a loop counter, and accepts a callback  
+that can return `true` to break out of the loop and anything else to keep looping 
 
 
 

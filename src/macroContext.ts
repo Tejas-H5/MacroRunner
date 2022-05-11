@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as path from "path";
 import EditableFile from "./editableFile";
 import { replaceAll } from "./textEditorUtil";
 import { assertType } from "./sourceUtil";
@@ -7,23 +8,35 @@ class MacroContext {
     private editor: vscode.TextEditor;
     private document: vscode.TextDocument;
     private files: EditableFile[];
-
-    readonly initialSelectedRanges: [number, number][];
+    public rootDir: string | undefined;
 
     constructor(editor: vscode.TextEditor, initialText: string | undefined = undefined) {
         this.document = editor.document;
 
+        let editableFile: EditableFile;
         if (initialText === undefined) {
-            this.files = [new EditableFile(this.document.getText())];
+            editableFile = new EditableFile(this.document.getText());
         } else {
-            this.files = [new EditableFile(initialText)];
+            editableFile = new EditableFile(initialText);
         }
 
-        this.editor = editor;
-        this.initialSelectedRanges = editor.selections.map((s) => [
+        editableFile.selectedRanges = editor.selections.map((s) => [
             this.document.offsetAt(s.start),
             this.document.offsetAt(s.end),
         ]);
+
+        this.files = [editableFile];
+        this.editor = editor;
+
+        let rootDir: string | undefined = undefined;
+        if (
+            vscode.workspace.workspaceFolders !== undefined &&
+            vscode.workspace.workspaceFolders.length > 0
+        ) {
+            rootDir = vscode.workspace.workspaceFolders[0].uri.fsPath;
+        } else if (!editor.document.isUntitled) {
+            rootDir = path.dirname(editor.document.uri.fsPath);
+        }
     }
 
     newFile(text: any = "") {

@@ -1,8 +1,12 @@
+Next release:
+	-> Ability to run macros that I have saved without actually opening them
+		-* run saved macro command
+		
+	-* ability for macros to request user input, and act on it
+
 TODO:
-- Add features
-	- some way to interact with any currently open file, and to write more files
-		- eh I cant be bothered. More projects to do, and this extension was mainly just so that I could quickly run some hacky script on a file I have open that I will never use again. Particularly, stuff like feeding an array of [string, string] to search and replace that takes a while manually
-			- allow importing of modules with require, and allow some way to know the project directory so people can do this themselves if they really need to
+
+	-* integration tests
 
 	-* Mitigate stack-overflows
 

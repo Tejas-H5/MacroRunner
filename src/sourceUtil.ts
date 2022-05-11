@@ -24,5 +24,9 @@ export const assertString = (text: any) => {
         return;
     }
 
-    throw new Error("newText is not a string, it is a " + typeof text);
+    let type: string = typeof text;
+    if (text.length) {
+        type = "array";
+    }
+    throw new Error("text is not a string, it is a " + type);
 };

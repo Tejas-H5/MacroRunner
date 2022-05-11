@@ -52,7 +52,8 @@ export const getEditorWithTargetFile = (macroEditor: vscode.TextEditor) => {
         );
     } else {
         throw new Error(
-            "You need the macro editor and the target document side-by-side. Also, this doesn't work for files larger than 50mb"
+            `The macro file and the target file must both be visible.
+Also, this doesn't work for files larger than 50mb, use the command 'Run Macro (for large files > 50mb)'`
         );
     }
 };

@@ -1,4 +1,7 @@
 # Change Log
+## 1.2.0 [unreleased]
+- Improved API for selected ranges.
+
 ## 1.1.0 2022/04/06
 - Fixed run macro command not working when you have an output log open
 - Fixed new macro opening in the wrong 'column'

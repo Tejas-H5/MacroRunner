@@ -1,5 +1,14 @@
 Anything I feel is cluttering macrorunner-plan or is finished I throw in here
 ---------------------------------------------------------
+
+	- [done] make the range selecting actually work.
+	
+	- [done] utility methods should not be on an EditableFile object, they should all be directly injected so that you can use them on any string at all.
+	
+	- some way to interact with any currently open file, and to write more files
+		- eh I cant be bothered. More projects to do, and this extension was mainly just so that I could quickly run some hacky script on a file I have open that I will never use again. Particularly, stuff like feeding an array of [string, string] to search and replace that takes a while manually
+			- allow importing of modules with require, and allow some way to know the project directory so people can do this themselves if they really need to
+
 A way to automate boring tasks in vs-code
 
 - Create newMacro command
