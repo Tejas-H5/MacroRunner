@@ -1,32 +1,26 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import EditableFile from "./editableFile";
-import { replaceAll } from "./textEditorUtil";
 import { assertType } from "./sourceUtil";
 
 class MacroContext {
-    private editor: vscode.TextEditor;
-    private document: vscode.TextDocument;
     private files: EditableFile[];
     public rootDir: string | undefined;
+    private firstEditor: vscode.TextEditor;
 
-    constructor(editor: vscode.TextEditor, initialText: string | undefined = undefined) {
-        this.document = editor.document;
+    constructor(editor: vscode.TextEditor) {
+        this.firstEditor = editor;
 
-        let editableFile: EditableFile;
-        if (initialText === undefined) {
-            editableFile = new EditableFile(this.document.getText());
-        } else {
-            editableFile = new EditableFile(initialText);
+        let editableFile = new EditableFile(editor.document.getText(), editor);
+        const document = editableFile.document;
+        if (document) {
+            editableFile.selectedRanges = editor.selections.map((s) => [
+                document.offsetAt(s.start),
+                document.offsetAt(s.end),
+            ]);
         }
 
-        editableFile.selectedRanges = editor.selections.map((s) => [
-            this.document.offsetAt(s.start),
-            this.document.offsetAt(s.end),
-        ]);
-
         this.files = [editableFile];
-        this.editor = editor;
 
         let rootDir: string | undefined = undefined;
         if (
@@ -47,6 +41,14 @@ class MacroContext {
         return newFile;
     }
 
+    getFile(name: string | undefined = undefined) {
+        if (!name) {
+            return this.files[0];
+        }
+
+        // TODO: get a file by name, and open it in the editor. the logic for
+    }
+
     fileCount() {
         return this.files.length;
     }
@@ -62,11 +64,25 @@ class MacroContext {
     }
 
     // users can await this if they want, but they really don't need to
-    async outputImmediate(index: number = 0) {
+    async outputImmediate() {
+        // TODO: apply all changes now.
+
+        const index = 0;
         assertType(index, "number");
 
-        replaceAll(this.getFile(index).text, this.document, this.editor.viewColumn, false);
+        this.files[index].applyChanges();
     }
+
+    applyChanges = async () => {
+        const targetEditorLanguage = this.firstEditor.document.languageId;
+
+        // create and update all non-empty output files
+        for (let i = 0; i < this.files.length; i++) {
+            const changes = this.files[i];
+
+            changes.applyChanges();
+        }
+    };
 }
 
 export default MacroContext;

@@ -60,9 +60,9 @@ An index greater than 0 can be provided to access files that were newly created 
 Text can be provided to set it's initial text.`,
             },
             {
-                name: "async outputImmediate(index=0)",
-                desc: `Use \`outputImmediate()\` to push the current text in a file directly to the target file immediately.
-This has no real use other than novelty, in that it can be used along with \`setInterval\`/\`loop\` to make animations.
+                name: "async outputImmediate()",
+                desc: `Use \`outputImmediate()\` to push the current text directly to the target file immediately.
+This has no real world use other than novelty, in that it can be used along with \`setInterval\`/\`loop\` to make animations.
 There was no real reason for me to add this, or the interval method overrides, I just did it for fun.
 See the GOL example to see how to use`,
             },

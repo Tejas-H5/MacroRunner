@@ -1,8 +1,5 @@
 Next release:
-	-> Ability to run macros that I have saved without actually opening them
-		-* run saved macro command
-		
-	-* ability for macros to request user input, and act on it
+	-> needs better logging features
 
 TODO:
 
@@ -14,7 +11,7 @@ TODO:
 	
 	- Create as few new API methods as needed
 		
-	-* needs better logging features
+
 	-* should create output even if empty
 	
 	- rename batchInsert back to insert, and add type checking to overload behaviour

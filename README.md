@@ -33,31 +33,6 @@ You will notice that the `Load Macro` command simply opens a macro you saved to 
 
 The `Run Macro` command won't work for files larger than 50mb. At the moment, all VSCode extensions are [unable to interact with files > 50mb in size](https://github.com/microsoft/vscode/issues/31078), so the extension will fail at the step where it is trying to find the document you have open. You will instead have to use the `Run Macro (For large files > 50mb)` command. This is identical to the `Run Macro` command, but you will manually specify a file, and then rather than editing the file itself, it will bring the result into a new untitled document.
 
-# Other use cases
-
-Sometimes you may want to do a bunch of processing on a document, and then output those results to a new document. You can do something like this:
-
-```javascript
-const file = context.getFile();
-
-// do some processing on the file
-const result = someProcessingOnTheFile(file.text);
-
-const output = context.newFile();
-output.setText(result);
-```
-
-This will create a new file with `result` as it's contents.
-
-It is also possible to make changes to a document based on the current cursor positions or selections, and to set new cursor positions/selections.
-
-Some basic text based animation is also supported, although not the main focus. Take a look at the `GOL.js` examples in the `examples` folder, and then read the documentation on `context.outputImmediate` and `loop` to understand how it works under the hood.
-
-# Features I won't add:
-I won't be adding any feature that causes the API to become more complicated than it already is. 
-For instance, utility functions that wrap vscode's filesystem API to access and write to any workspace file would necessarily need to be `async`, and I don't particularly like writing `await` in front of every single function when to avoid any bugs that I would get from forgetting an `await` (but if you really wanted to do something like this, checkout the `projectDirectory` example in the examples folder).
-
-
 # Possible additional features
 
 So it turns out that I am using this extension a lot more than even I thought I would. There are a few things that I now need to add:
@@ -124,10 +99,10 @@ Text can be provided to set it's initial text.
 
 
 
-### async context.outputImmediate(index=0)
+### async context.outputImmediate()
 
-> Use `outputImmediate()` to push the current text in a file directly to the target file immediately.
-This has no real use other than novelty, in that it can be used along with `setInterval`/`loop` to make animations.
+> Use `outputImmediate()` to push the current text directly to the target file immediately.
+This has no real world use other than novelty, in that it can be used along with `setInterval`/`loop` to make animations.
 There was no real reason for me to add this, or the interval method overrides, I just did it for fun.
 See the GOL example to see how to use
 

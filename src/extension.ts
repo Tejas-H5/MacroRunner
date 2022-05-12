@@ -12,7 +12,7 @@ import { runMacroCommand, runMacroCommandWithFilePicker } from "./runMacroComman
 export var macrosUri: vscode.Uri | null = null;
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log("MacroRunner extension is now active!");
+    console.log("Macro Runner extension is now active!");
 
     const storagePath = context.globalStorageUri;
     macrosUri = vscode.Uri.joinPath(storagePath, "macros");

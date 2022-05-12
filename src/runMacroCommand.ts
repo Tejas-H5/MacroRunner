@@ -2,12 +2,12 @@ import * as vscode from "vscode";
 import DebugContext, { showErrors, SoftError } from "./logging";
 import MacroContext from "./macroContext";
 import { createIntervalTimeoutFunctions } from "./intervalTimeout";
-import { replaceAllFile } from "./textEditorUtil";
 import { containsWhileLoop } from "./sourceUtil";
 import { findMacroEditor, findTargetEditor } from "./editorFinding";
 import { TextDecoder, TextEncoder } from "util";
 import * as stringUtil from "./stringUtil";
 import { input } from "./input";
+import { getDefaultURI, osFileOpener } from "./fileUtil";
 
 export const runMacroCommandWithFilePicker = async () => {
     try {
@@ -37,33 +37,6 @@ export const runMacroCommandWithFilePicker = async () => {
     }
 };
 
-const getDefaultURI = () => {
-    let uri = undefined;
-    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0]) {
-        uri = vscode.workspace.workspaceFolders[0].uri;
-    }
-
-    return uri;
-};
-
-const osFileOpener = async (uri: vscode.Uri | undefined) => {
-    if (!uri) return;
-
-    const files = await vscode.window.showOpenDialog({
-        canSelectFiles: true,
-        canSelectFolders: false,
-        canSelectMany: false,
-        defaultUri: uri,
-    });
-
-    if (!files || files.length === 0) {
-        return;
-    }
-
-    const bytes = await vscode.workspace.fs.readFile(files[0]);
-    return bytes;
-};
-
 export const runMacroCommand = async () => {
     try {
         const macroEditor = findMacroEditor();
@@ -91,7 +64,7 @@ If you aren't very sure that this code won't hang, ready up a Task Manager or co
     }
 
     // prepare objects to feed to the macro
-    let executionResult = new MacroContext(targetEditor, targetText);
+    let executionResult = new MacroContext(targetEditor);
 
     const debug = new DebugContext();
     const timerContainer = createIntervalTimeoutFunctions();
@@ -125,45 +98,5 @@ return (async (context, debug, require, ${allInjectedFunctions.map((o) => o.name
     // create error modals
     await timerContainer.joinAll();
 
-    await applyMacroContextResult(executionResult, targetEditor);
-};
-
-const applyMacroContextResult = async (ctx: MacroContext, targetEditor: vscode.TextEditor) => {
-    // update the current text file if we had any outputs
-    const targetEditorLanguage = targetEditor.document.languageId;
-    const initialDocument = targetEditor.document;
-
-    // create and update all non-empty output files
-    for (let i = 0; i < ctx.fileCount(); i++) {
-        if (ctx.getFile(i).text === "") continue;
-
-        let document: vscode.TextDocument;
-        if (i === 0) {
-            document = initialDocument;
-        } else {
-            document = await vscode.workspace.openTextDocument({
-                content: "",
-                language: targetEditorLanguage,
-            });
-        }
-
-        const changes = ctx.getFile(i);
-        await replaceAllFile(changes, document, targetEditor.viewColumn, true);
-
-        const filteredSelectedRanges = new Array<[number, number]>();
-        for (const range of changes.selectedRanges) {
-            if (!range) continue;
-
-            filteredSelectedRanges.push(range);
-        }
-
-        const vscodeSelections = filteredSelectedRanges.map((range) => {
-            return new vscode.Selection(
-                document.positionAt(range[0]),
-                document.positionAt(range[1])
-            );
-        });
-
-        targetEditor.selections = vscodeSelections;
-    }
+    await executionResult.applyChanges();
 };

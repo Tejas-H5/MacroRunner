@@ -1,9 +1,9 @@
 import { TextDecoder, TextEncoder } from "util";
 import * as vscode from "vscode";
 import { macrosUri } from "./extension";
-import { replaceAll } from "./textEditorUtil";
 import { findAvailableEditors, findMacroEditor, findTargetEditor } from "./editorFinding";
 import { runMacro } from "./runMacroCommand";
+import { replaceAll } from "./editableFile";
 
 const ensureMacrosDir = async () => {
     if (macrosUri === null) {
