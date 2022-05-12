@@ -47,21 +47,6 @@ class MacroContext {
         return newFile;
     }
 
-    getFile(index: any = 0) {
-        assertType(index, "number");
-
-        if (index < 0 || index >= this.files.length)
-            throw new Error(
-                "Index " +
-                    index +
-                    " is not a valid file, as there are only " +
-                    this.fileCount() +
-                    " files available"
-            );
-
-        return this.files[index];
-    }
-
     fileCount() {
         return this.files.length;
     }

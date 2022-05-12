@@ -1,32 +1,23 @@
 import * as vscode from "vscode";
-import DebugContext, { showErrors } from "./logging";
+import DebugContext, { showErrors, SoftError } from "./logging";
 import MacroContext from "./macroContext";
 import { createIntervalTimeoutFunctions } from "./intervalTimeout";
 import { replaceAllFile } from "./textEditorUtil";
 import { containsWhileLoop } from "./sourceUtil";
-import { getEditorWithMacroFile, getEditorWithTargetFile } from "./editorFinding";
+import { findMacroEditor, findTargetEditor } from "./editorFinding";
 import { TextDecoder, TextEncoder } from "util";
 import * as stringUtil from "./stringUtil";
+import { input } from "./input";
 
 export const runMacroCommandWithFilePicker = async () => {
     try {
-        const macroEditor = getEditorWithMacroFile();
+        const macroEditor = findMacroEditor();
+        const macroCode = macroEditor.document.getText();
 
-        let uri = undefined;
-        if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0]) {
-            uri = vscode.workspace.workspaceFolders[0].uri;
-        }
+        const data = await osFileOpener(getDefaultURI());
+        if (!data) return;
 
-        const files = await vscode.window.showOpenDialog({
-            canSelectFiles: true,
-            canSelectFolders: false,
-            canSelectMany: false,
-            defaultUri: uri,
-        });
-
-        if (!files || files.length === 0) {
-            return;
-        }
+        const initialText = new TextDecoder().decode(data);
 
         const newDocument = await vscode.workspace.openTextDocument({
             language: "text",
@@ -35,17 +26,7 @@ export const runMacroCommandWithFilePicker = async () => {
 
         const targetEditor = await vscode.window.showTextDocument(newDocument);
 
-        const bytes = await vscode.workspace.fs.readFile(files[0]);
-        const enc = new TextDecoder();
-        const initialText = enc.decode(bytes);
-
-        const executionResult = await runMacro(macroEditor, targetEditor, initialText);
-
-        if (!executionResult) {
-            return;
-        }
-
-        await applyMacroContextResult(executionResult, targetEditor);
+        await runMacro(macroCode, targetEditor, initialText);
 
         vscode.window.showInformationMessage(
             "VSCode extensions can't non-destructively edit anything larger than 50mb in size, so the output will go to a new untitled document for now. " +
@@ -56,29 +37,50 @@ export const runMacroCommandWithFilePicker = async () => {
     }
 };
 
+const getDefaultURI = () => {
+    let uri = undefined;
+    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0]) {
+        uri = vscode.workspace.workspaceFolders[0].uri;
+    }
+
+    return uri;
+};
+
+const osFileOpener = async (uri: vscode.Uri | undefined) => {
+    if (!uri) return;
+
+    const files = await vscode.window.showOpenDialog({
+        canSelectFiles: true,
+        canSelectFolders: false,
+        canSelectMany: false,
+        defaultUri: uri,
+    });
+
+    if (!files || files.length === 0) {
+        return;
+    }
+
+    const bytes = await vscode.workspace.fs.readFile(files[0]);
+    return bytes;
+};
+
 export const runMacroCommand = async () => {
     try {
-        const macroEditor = getEditorWithMacroFile();
-        const targetEditor = getEditorWithTargetFile(macroEditor);
+        const macroEditor = findMacroEditor();
+        const targetEditor = findTargetEditor(macroEditor);
+        const macroSource = macroEditor.document.getText();
 
-        const executionResult = await runMacro(macroEditor, targetEditor);
-
-        if (!executionResult) {
-            return;
-        }
-
-        await applyMacroContextResult(executionResult, targetEditor);
+        await runMacro(macroSource, targetEditor);
     } catch (err: any) {
         vscode.window.showErrorMessage(err.message);
     }
 };
 
-const runMacro = async (
-    macroEditor: vscode.TextEditor,
+export const runMacro = async (
+    code: string,
     targetEditor: vscode.TextEditor,
     targetText: string | undefined = undefined
 ) => {
-    const code = macroEditor.document.getText();
     if (containsWhileLoop(code)) {
         // wait for the user to close the warning before proceeding anyway
         await vscode.window.showWarningMessage(
@@ -89,11 +91,15 @@ If you aren't very sure that this code won't hang, ready up a Task Manager or co
     }
 
     // prepare objects to feed to the macro
-    let ctx = new MacroContext(targetEditor, targetText);
+    let executionResult = new MacroContext(targetEditor, targetText);
 
     const debug = new DebugContext();
     const timerContainer = createIntervalTimeoutFunctions();
-    const allInjectedFunctions = [...timerContainer.functions, ...stringUtil.stringUtilFunctions];
+    const allInjectedFunctions = [
+        ...timerContainer.functions,
+        ...stringUtil.stringUtilFunctions,
+        input,
+    ];
 
     // actually run the macro
     try {
@@ -104,9 +110,14 @@ return (async (context, debug, require, ${allInjectedFunctions.map((o) => o.name
 });`;
 
         const macroFunction = Function(macroSource)();
-        await macroFunction(ctx, debug, require, ...allInjectedFunctions);
+        await macroFunction(executionResult, debug, require, ...allInjectedFunctions);
     } catch (e: any) {
-        showErrors(e);
+        if (e instanceof SoftError) {
+            debug.info(e.message);
+        } else {
+            showErrors(e);
+        }
+
         return;
     }
 
@@ -114,7 +125,7 @@ return (async (context, debug, require, ${allInjectedFunctions.map((o) => o.name
     // create error modals
     await timerContainer.joinAll();
 
-    return ctx;
+    await applyMacroContextResult(executionResult, targetEditor);
 };
 
 const applyMacroContextResult = async (ctx: MacroContext, targetEditor: vscode.TextEditor) => {

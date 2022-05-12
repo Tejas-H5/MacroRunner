@@ -1,99 +1,104 @@
 {
-	"name": "macro-runner",
-	"displayName": "Macro Runner",
-	"description": "A quick and easy way to make edits to a single document using Javascript",
-	"version": "1.1.0",
-	"engines": {
-		"vscode": "^1.65.0"
-	},
-	"icon": "res/icon.png",
-	"galleryBanner": {
-		"color": "#161616",
-		"theme": "dark"
-	},
-	"categories": [
-		"Other"
-	],
-	"keywords": [
-		"macros",
-		"macro",
-		"scripting",
-		"text-editing",
-		"text-processing"
-	],
-	"repository": {
-		"directory": ".",
-		"type": "git",
-		"url": "https://github.com/El-Tejaso/MacroRunner"
-	},
-	"publisher": "El-Tejaso",
-	"activationEvents": [
-		"onCommand:MacroRunner.runMacro",
-		"onCommand:MacroRunner.runMacroLF",
-		"onCommand:MacroRunner.newMacro",
-		"onCommand:MacroRunner.loadMacro",
-		"onCommand:MacroRunner.saveMacro",
-		"onCommand:MacroRunner.removeMacro",
-		"onCommand:MacroRunner.openMacrosDirectory"
-	],
-	"main": "./out/extension.js",
-	"contributes": {
-		"commands": [
+    "name": "macro-runner",
+    "displayName": "Macro Runner",
+    "description": "A quick and easy way to process text files with Javascript",
+    "version": "1.1.0",
+    "engines": {
+        "vscode": "^1.65.0"
+    },
+    "icon": "res/icon.png",
+    "galleryBanner": {
+        "color": "#161616",
+        "theme": "dark"
+    },
+    "categories": [
+        "Other"
+    ],
+    "keywords": [
+        "macros",
+        "macro",
+        "scripting",
+        "text-editing",
+        "text-processing"
+    ],
+    "repository": {
+        "directory": ".",
+        "type": "git",
+        "url": "https://github.com/El-Tejaso/MacroRunner"
+    },
+    "publisher": "El-Tejaso",
+    "activationEvents": [
+        "onCommand:MacroRunner.runMacro",
+        "onCommand:MacroRunner.runMacroLF",
+        "onCommand:MacroRunner.newMacro",
+        "onCommand:MacroRunner.loadMacro",
+        "onCommand:MacroRunner.saveMacro",
+        "onCommand:MacroRunner.removeMacro",
+        "onCommand:MacroRunner.openMacrosDirectory",
+        "onCommand:MacroRunner.runSavedMacro"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
 			{
 				"command": "MacroRunner.runMacro",
-				"title": "MacroRunner: Run Macro"
+				"title": "Macro Runner: Run Macro"
 			},
 			{
 				"command": "MacroRunner.runMacroLF",
-				"title": "MacroRunner: Run Macro (For large files > 50mb)"
+				"title": "Macro Runner: Run Macro (For large files > 50mb)"
+			},
+			{
+				"command": "MacroRunner.runSavedMacro",
+				"title": "Macro Runner: Run saved macro"
 			},
 			{
 				"command": "MacroRunner.newMacro",
-				"title": "MacroRunner: New Macro"
+				"title": "Macro Runner: New Macro"
 			},
 			{
 				"command": "MacroRunner.loadMacro",
-				"title": "MacroRunner: Load Macro"
+				"title": "Macro Runner: Load Macro"
 			},
 			{
 				"command": "MacroRunner.saveMacro",
-				"title": "MacroRunner: Save Macro"
+				"title": "Macro Runner: Save Macro"
 			},
 			{
 				"command": "MacroRunner.removeMacro",
-				"title": "MacroRunner: Delete Macro"
+				"title": "Macro Runner: Delete Macro"
 			},
 			{
 				"command": "MacroRunner.openMacrosDirectory",
-				"title": "MacroRunner: Open Macros directory"
+				"title": "Macro Runner: Open Macros directory"
 			}
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile && npm run lint",
-		"lint": "eslint src --ext ts",
-		"test": "node ./out/test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/glob": "^7.2.0",
-		"@types/mocha": "^9.1.0",
-		"@types/node": "14.x",
-		"@types/vscode": "^1.65.0",
-		"@typescript-eslint/eslint-plugin": "^5.12.1",
-		"@typescript-eslint/parser": "^5.12.1",
-		"@vscode/test-electron": "^2.1.2",
-		"eslint": "^8.9.0",
-		"glob": "^7.2.0",
-		"mocha": "^9.2.1",
-		"typescript": "^4.5.5"
-	},
-	"__metadata": {
-		"id": "ad9b690b-84ef-477a-8c71-508aae4e9d1c",
-		"publisherDisplayName": "El-Tejaso",
-		"publisherId": "3b8d1cab-8dcb-479e-bf1a-dc8c0be15b12",
-		"isPreReleaseVersion": false
-	}
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src --ext ts",
+        "test": "node ./out/test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/glob": "^7.2.0",
+        "@types/mocha": "^9.1.0",
+        "@types/node": "14.x",
+        "@types/vscode": "^1.65.0",
+        "@typescript-eslint/eslint-plugin": "^5.12.1",
+        "@typescript-eslint/parser": "^5.12.1",
+        "@vscode/test-electron": "^2.1.2",
+        "eslint": "^8.9.0",
+        "glob": "^7.2.0",
+        "mocha": "^9.2.1",
+        "typescript": "^4.5.5"
+    },
+    "__metadata": {
+        "id": "ad9b690b-84ef-477a-8c71-508aae4e9d1c",
+        "publisherDisplayName": "El-Tejaso",
+        "publisherId": "3b8d1cab-8dcb-479e-bf1a-dc8c0be15b12",
+        "isPreReleaseVersion": false
+    }
 }

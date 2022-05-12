@@ -1,8 +1,9 @@
-import { TextEncoder } from "util";
+import { TextDecoder, TextEncoder } from "util";
 import * as vscode from "vscode";
 import { macrosUri } from "./extension";
 import { replaceAll } from "./textEditorUtil";
-import { getAvailableEditors, getEditorWithMacroFile } from "./editorFinding";
+import { findAvailableEditors, findMacroEditor, findTargetEditor } from "./editorFinding";
+import { runMacro } from "./runMacroCommand";
 
 const ensureMacrosDir = async () => {
     if (macrosUri === null) {
@@ -51,7 +52,7 @@ export const saveMacroCommand = async () => {
     }
 
     try {
-        const macroEditor = getEditorWithMacroFile();
+        const macroEditor = findMacroEditor();
         const macroEditorDocument = macroEditor.document;
 
         const input = await vscode.window.showInputBox({
@@ -77,7 +78,7 @@ export const saveMacroCommand = async () => {
             .then(async (editor) => {
                 if (macroEditorDocument.isUntitled) {
                     // no clean way to close an untitled document, so we are just going to
-                    // replace with nothing so that we don't get the option to save the document
+                    // replace with nothing so that we can bypass the 'do you want to save?' warning
                     await replaceAll("", editor.document, editor.viewColumn, false).then(() => {
                         vscode.commands.executeCommand("workbench.action.closeActiveEditor");
                     });
@@ -108,6 +109,27 @@ export const loadMacroCommand = async () => {
     if (input === undefined) return;
 
     await loadMacro(input);
+};
+
+export const runSavedMacroCommand = async () => {
+    const input = await pickExistingMacro("pick a macro to load");
+    if (input === undefined) return;
+
+    const dir = macrosUri;
+    if (dir === null) return;
+
+    try {
+        const fileContentsRaw: Uint8Array = await vscode.workspace.fs.readFile(
+            vscode.Uri.joinPath(dir, input)
+        );
+
+        const macroSource = new TextDecoder().decode(fileContentsRaw);
+        const targetEditor = findTargetEditor();
+
+        await runMacro(macroSource, targetEditor);
+    } catch (err: any) {
+        vscode.window.showErrorMessage(err.message);
+    }
 };
 
 export const removeMacroCommand = async () => {
@@ -157,7 +179,7 @@ const showDocument = async (
     document: vscode.TextDocument,
     cursorIndex: number | undefined = undefined
 ) => {
-    let visibleEditors = getAvailableEditors();
+    let visibleEditors = findAvailableEditors();
     const activeTextEditor = vscode.window.activeTextEditor;
     let column: vscode.ViewColumn;
     if (visibleEditors.length === 1) {

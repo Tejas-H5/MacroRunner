@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-export const getAvailableEditors = () => {
+export const findAvailableEditors = () => {
     let visibleEditors = vscode.window.visibleTextEditors;
     visibleEditors = visibleEditors.filter((editor) => {
         return !["output"].includes(editor.document.uri.scheme);
@@ -9,8 +9,8 @@ export const getAvailableEditors = () => {
     return visibleEditors;
 };
 
-export const getEditorWithMacroFile = () => {
-    let visibleEditors = getAvailableEditors();
+export const findMacroEditor = () => {
+    let visibleEditors = findAvailableEditors();
 
     let macroEditors = visibleEditors.filter((editor) => {
         const code = editor.document.getText();
@@ -39,21 +39,45 @@ export const getEditorWithMacroFile = () => {
     return macroEditors[0];
 };
 
-export const getEditorWithTargetFile = (macroEditor: vscode.TextEditor) => {
-    let editor = vscode.window.activeTextEditor;
-    if (editor && editor !== macroEditor) return editor;
+export const findTargetEditor = (
+    macroEditor: vscode.TextEditor | undefined = undefined
+): vscode.TextEditor => {
+    let activeEditor = vscode.window.activeTextEditor;
 
-    let visibleEditors = getAvailableEditors();
-    if (visibleEditors.length === 2 || editor === undefined) {
-        return visibleEditors[0] === macroEditor ? visibleEditors[1] : visibleEditors[0];
-    } else if (visibleEditors.length > 2) {
-        throw new Error(
-            "When you have more than two other editors open, bring focus to the one you want to run the macro in"
-        );
+    let visibleEditors = findAvailableEditors();
+
+    if (macroEditor === undefined) {
+        if (activeEditor) {
+            return activeEditor;
+        }
+
+        if (visibleEditors.length > 1) {
+            throw new Error(
+                "When you have more than one editor open, bring focus to the one you want to run the macro in"
+            );
+        }
+
+        if (visibleEditors.length === 1) {
+            return visibleEditors[0];
+        }
     } else {
-        throw new Error(
-            `The macro file and the target file must both be visible.
-Also, this doesn't work for files larger than 50mb, use the command 'Run Macro (for large files > 50mb)'`
-        );
+        if (activeEditor && activeEditor !== macroEditor) {
+            return activeEditor;
+        }
+
+        if (visibleEditors.length > 2) {
+            throw new Error(
+                "When you have more than two editors open, bring focus to the one you want to run the macro in"
+            );
+        }
+
+        if (visibleEditors.length === 2) {
+            return visibleEditors[0] === macroEditor ? visibleEditors[1] : visibleEditors[0];
+        }
     }
+
+    throw new Error(
+        `The macro file and the target file must both be visible.
+Also, this doesn't work for files larger than 50mb, use the command 'Run Macro (for large files > 50mb)'`
+    );
 };

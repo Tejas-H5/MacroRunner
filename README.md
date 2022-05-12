@@ -1,32 +1,37 @@
 
 # Macro Runner
-A quick way to make edits to a single document using some disposable JavaScript. Since you can also run arbitrary JavaScript code and you are working with a string instead of vscode's editBuilder API, the sky is the limit. 
+This extension provides a quick and simple way to process a text file with some quickly written Javascript. The API is far simpler than VSCode's edit builder API.
 
 Use the `New Macro` command from the `Ctrl+Shift+P` menu to create a new macro. The default macro template will open in a text editor to the side of whatever you're editing. 
 
-Then, write your macro. For example, here is a simple script that increments all the chars in a document by 1:
+Then, write your macro. For example, here is a macro that will remove duplicate lines in a text file - something that I actually use every now and then:
 
 ```javascript
-// macro
+// macro: deduplicate lines
+
 const file = context.getFile();
+let text = file.text;
 
-const cipherOffset = 1;
-const stringBuilder = []
-for (let i = 0; i < file.text.length; i++) {
-    stringBuilder.push(String.fromCharCode(file.text.charCodeAt(i) + cipherOffset));
+if (text[text.length - 1] !== "\n") {
+    text += "\n";
 }
+// let's say you wrote this real quick and didn't care for readability
+text = [...new Set(text.split("\n"))].join("\n");
 
-file.setText(stringBuilder.join(""));
+file.setText(text);
 ```
-(Find more examples in the `examples` folder)
 
-When your macro is ready, run it with the `Run macro` command. This command attempts to find a visible editor with a macro and a target editor. If both are found, the code in the macro editor will be run on the target editor. If exactly two editors are open, then the target editor is the one without the macro. If more than two editors are open, then the target is the one with the cursor in it.
+(You won't have any autocomplete, but the API is fairly small and easy to remember. You can find the documentation if you keep scrolling, but the examples in the `examples` folder should explain most things. (Also if you happen to know an easy way I could add autocomplete, feel free to let me know))
 
-Use the `Save macro` command to save this macro to global storage for later, and then re-open this macro again whenever you want with the `Load macro` command. The `Delete macro` and `Open macros directory` commands also exist, do exactly what you think they do.
+Run it with the `Run macro` command. This will only work if you have the editor with the macro code and the editor with the target text visible at the same time. 
+
+You don't have to save your macro anywhere to be able to run it, but you can if you want to with the `Save macro` command. This allows you to load it later with the `Load macro` command. The `Delete macro` and `Open macros directory` commands also exist for macro management. 
+
+You will notice that the `Load Macro` command simply opens a macro you saved to the side of whatever you're editing. But a lot of the time, you will want to run a macro without having to call `Load Macro` and `Run Macro` and all the other stuff associated with that. You can use the `Run Saved Macro` command to run something that you have already saved.
 
 ## Limitations
 
-You will find that the `Run Macro` command simply doesn't work for files that are larger than 50mb. At the moment, all VSCode extensions are [unable to interact with files > 50mb in size](https://github.com/microsoft/vscode/issues/31078), so you will have to use the `Run Macro (For large files > 50mb)` command. This is identical to the `Run Macro` command, but it will ask you to manually open a file, and then rather than editing the file itself, it will bring the result into a new untitled document.
+The `Run Macro` command won't work for files larger than 50mb. At the moment, all VSCode extensions are [unable to interact with files > 50mb in size](https://github.com/microsoft/vscode/issues/31078), so the extension will fail at the step where it is trying to find the document you have open. You will instead have to use the `Run Macro (For large files > 50mb)` command. This is identical to the `Run Macro` command, but you will manually specify a file, and then rather than editing the file itself, it will bring the result into a new untitled document.
 
 # Other use cases
 
@@ -299,6 +304,14 @@ These are normal javascript methods that have been directly injected, or overrid
 ### require() -> module
 
 > JavaScript's require function, untouched. Use it to require whatever modules you need
+
+
+
+### async input(prompt: string) -> Promise<string>
+
+> Provides a way to input arguments to your macros. You will need to use `await` with this method. 
+This method will throw an exception if the input is canceled, and prevent the rest of the macro from running. 
+If you don't want this behaviour, put it in a try-catch.
 
 
 

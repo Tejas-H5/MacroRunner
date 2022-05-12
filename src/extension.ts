@@ -5,6 +5,7 @@ import {
     removeMacroCommand,
     newMacroCommand,
     openMacrosDir,
+    runSavedMacroCommand,
 } from "./macroStorage";
 import { runMacroCommand, runMacroCommandWithFilePicker } from "./runMacroCommand";
 
@@ -16,28 +17,48 @@ export function activate(context: vscode.ExtensionContext) {
     const storagePath = context.globalStorageUri;
     macrosUri = vscode.Uri.joinPath(storagePath, "macros");
 
-    context.subscriptions.push(
-        vscode.commands.registerCommand("MacroRunner.runMacro", async () => {
+    const withProgress = (message: string, commandFunction: () => Promise<void>) => {
+        return () => {
             vscode.window.withProgress(
-                { location: vscode.ProgressLocation.Window, title: "macro running..." },
-                runMacroCommand
+                { location: vscode.ProgressLocation.Window, title: message },
+                commandFunction
             );
-        }),
-        vscode.commands.registerCommand("MacroRunner.runMacroLF", async () => {
-            vscode.window.withProgress(
-                {
-                    location: vscode.ProgressLocation.Window,
-                    title: "(Large File) macro running...",
-                },
-                runMacroCommandWithFilePicker
-            );
-        }),
+        };
+    };
 
-        vscode.commands.registerCommand("MacroRunner.newMacro", newMacroCommand),
-        vscode.commands.registerCommand("MacroRunner.loadMacro", loadMacroCommand),
-        vscode.commands.registerCommand("MacroRunner.saveMacro", saveMacroCommand),
-        vscode.commands.registerCommand("MacroRunner.removeMacro", removeMacroCommand),
-        vscode.commands.registerCommand("MacroRunner.openMacrosDirectory", openMacrosDir)
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            "MacroRunner.runMacro",
+            withProgress("macro running...", runMacroCommand)
+        ),
+        vscode.commands.registerCommand(
+            "MacroRunner.runMacroLF",
+            withProgress("(Large File) macro running...", runMacroCommandWithFilePicker)
+        ),
+        vscode.commands.registerCommand(
+            "MacroRunner.runSavedMacro",
+            withProgress("macro running...", runSavedMacroCommand)
+        ),
+        vscode.commands.registerCommand(
+            "MacroRunner.newMacro",
+            withProgress("creating new macro...", newMacroCommand)
+        ),
+        vscode.commands.registerCommand(
+            "MacroRunner.loadMacro",
+            withProgress("loading macro...", loadMacroCommand)
+        ),
+        vscode.commands.registerCommand(
+            "MacroRunner.saveMacro",
+            withProgress("saving macro...", saveMacroCommand)
+        ),
+        vscode.commands.registerCommand(
+            "MacroRunner.removeMacro",
+            withProgress("removing macro...", removeMacroCommand)
+        ),
+        vscode.commands.registerCommand(
+            "MacroRunner.openMacrosDirectory",
+            withProgress("opening macro...", openMacrosDir)
+        )
     );
 }
 

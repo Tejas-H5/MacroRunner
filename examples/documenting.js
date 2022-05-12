@@ -201,6 +201,12 @@ Any PRers ?`,
                 desc: "JavaScript's require function, untouched. Use it to require whatever modules you need",
             },
             {
+                name: "async input(prompt: string) -> Promise<string>",
+                desc: `Provides a way to input arguments to your macros. You will need to use \`await\` with this method. 
+This method will throw an exception if the input is canceled, and prevent the rest of the macro from running. 
+If you don't want this behaviour, put it in a try-catch.`,
+            },
+            {
                 name: "SetInterval(callback, milliseconds) -> NodeJS.Timeout, SetTimeout(callback, milliseconds) -> NodeJS.Timeout, ClearInterval(timeout: NodeJS.Timeout), ClearTimeout(timeout: NodeJS.Timeout),",
                 desc: `These are actually wrappers for the normal javascript methods that interop better with this extension.
 It behaves exactly the same as the javascript method.`,

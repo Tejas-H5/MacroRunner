@@ -17,6 +17,13 @@ export default class DebugContext {
     }
 }
 
+export class SoftError {
+    public message: string;
+    constructor(message: string) {
+        this.message = message;
+    }
+}
+
 export const compactStack = (stack: string) => {
     let earlyCutoff = stack.indexOf("at eval (eval at runMacro");
     let earlyEnd = earlyCutoff + 1000;

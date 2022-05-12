@@ -1,6 +1,13 @@
 # Change Log
-## 1.2.0 [unreleased]
+Note that this extension is currently in a phase where the API will change drastically from release to release.
+
+## 1.2.0 The macro update [unreleased]
 - Improved API for selected ranges.
+- New command: Run saved macro
+    - I found myself loading a macro, running it, and then closing it a lot of times. This command speeds this up.
+- New function: `input(prompt: string) -> Promise<string>` to get input from the user.
+    - This combined with the "Run saved macro" command now make this extension actually able to run what most people would refer to as 'macros', which it couldn't before
+- [unfinished] Added logging capabilities. Access a file using `getFile("filename") -> EditableFile`, and write to that.
 
 ## 1.1.0 2022/04/06
 - Fixed run macro command not working when you have an output log open
