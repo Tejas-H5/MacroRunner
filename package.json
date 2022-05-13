@@ -2,7 +2,7 @@
     "name": "macro-runner",
     "displayName": "Macro Runner",
     "description": "Make edits to text files with Javascript",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "engines": {
         "vscode": "^1.65.0"
     },
@@ -42,35 +42,35 @@
         "commands": [
             {
                 "command": "MacroRunner.runMacro",
-                "title": "Macro Runner: Run Macro"
+                "title": "Run Macro (Macro Runner)"
             },
             {
                 "command": "MacroRunner.runMacroLF",
-                "title": "Macro Runner: Run Macro (For large files > 50mb)"
+                "title": "Run Macro (For large files > 50mb) (Macro Runner)"
             },
             {
                 "command": "MacroRunner.runSavedMacro",
-                "title": "Macro Runner: Run saved macro"
+                "title": "Run saved macro (Macro Runner)"
             },
             {
                 "command": "MacroRunner.newMacro",
-                "title": "Macro Runner: New Macro"
+                "title": "New Macro (Macro Runner)"
             },
             {
                 "command": "MacroRunner.loadMacro",
-                "title": "Macro Runner: Load Macro"
+                "title": "Load Macro (Macro Runner)"
             },
             {
                 "command": "MacroRunner.saveMacro",
-                "title": "Macro Runner: Save Macro"
+                "title": "Save Macro (Macro Runner)"
             },
             {
                 "command": "MacroRunner.removeMacro",
-                "title": "Macro Runner: Delete Macro"
+                "title": "Delete Macro (Macro Runner)"
             },
             {
                 "command": "MacroRunner.openMacrosDirectory",
-                "title": "Macro Runner: Open Macros directory"
+                "title": "Open Macros directory (Macro Runner)"
             }
         ]
     },

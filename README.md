@@ -195,8 +195,10 @@ These are utility methods that make string editing much easier.
 
 ### `replaceMany(text:string, ranges: [number, number][], strings: string[]) -> [newText: string, new ranges: [number, number][]]`
 
-> Replaces all specified ranges in the text with the corresponding string. Modulo will be used to loop through strings if fewer strings than ranges are provided.  It then returns all the new range positions. 
-Overlapping ranges will throw an exception. 
+> Replaces all specified ranges in the text with the corresponding string. 
+Modulo will be used to loop through strings if fewer strings than ranges are provided.  
+Overlapping ranges will throw an exception.
+It then returns a tuple `[newText:string, newRanges: [number, number][]]`.
 The ranges will also be returned in sorted order based on their starting point, as this is a side-effect of checking for overlapping ranges
 
 ### `removeMany(text:string, ranges: [number, number][]) -> [newText: string, new ranges: [number, number][]]`

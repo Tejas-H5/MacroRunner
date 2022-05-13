@@ -10,6 +10,8 @@ Note that this extension is currently in a phase where the API will change drast
     - This combined with the "Run saved macro" command now make this extension actually able to run what most people would refer to as 'macros', which it couldn't before
 - New function: `exit(reason: string)`
     - Needed to handle case of `input` being canceled, so I made this.
+- Changed command naming convention to be faster
+- [not done yet] Added one of those fancy gif things to the documentation.
 
 ## 1.1.0 2022/04/06
 - Fixed run macro command not working when you have an output log open

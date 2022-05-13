@@ -162,8 +162,10 @@ Any PRers ?`,
         methods: [
             {
                 name: "replaceMany(text:string, ranges: [number, number][], strings: string[]) -> [newText: string, new ranges: [number, number][]]",
-                desc: `Replaces all specified ranges in the text with the corresponding string. Modulo will be used to loop through strings if fewer strings than ranges are provided.  It then returns all the new range positions. 
-Overlapping ranges will throw an exception. 
+                desc: `Replaces all specified ranges in the text with the corresponding string. 
+Modulo will be used to loop through strings if fewer strings than ranges are provided.  
+Overlapping ranges will throw an exception.
+It then returns a tuple \`[newText:string, newRanges: [number, number][]]\`.
 The ranges will also be returned in sorted order based on their starting point, as this is a side-effect of checking for overlapping ranges`,
             },
             {
@@ -218,5 +220,6 @@ where start is the start of the match (inclusive) and end is the end of a match 
 
 let documentationText = documentation.map(createObjectSection).join("");
 const file = context.getFile();
-const truncatedText = file.text.substring(0, file.lastIndexAfter('[//]: # "Anchor point"'));
-file.setText(truncatedText + "\n\n" + documentationText);
+let text = file.text;
+text = text.substring(0, lastIndexAfter(text, '[//]: # "Anchor point"'));
+file.setText(text + "\n\n" + documentationText);
