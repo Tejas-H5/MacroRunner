@@ -80,17 +80,17 @@ export default class EditableFile {
             this.document = document;
         }
 
-        await vscode.window
-            .showTextDocument(document, undefined, true)
-            .then(async (targetEditor) => {
-                const doc = document;
-                if (!doc) {
-                    return;
-                }
+        const column = this.editor?.viewColumn;
 
-                this.editor = targetEditor;
-                await replaceAllFile(this, doc, targetEditor.viewColumn, true);
-            });
+        await vscode.window.showTextDocument(document, column, true).then(async (targetEditor) => {
+            const doc = document;
+            if (!doc) {
+                return;
+            }
+
+            this.editor = targetEditor;
+            await replaceAllFile(this, doc, targetEditor.viewColumn, true);
+        });
 
         if (document && this.editor) {
             const filteredSelectedRanges = new Array<[number, number]>();

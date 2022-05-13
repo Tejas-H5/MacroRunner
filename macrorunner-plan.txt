@@ -1,7 +1,9 @@
 Next release:
-	-> needs better logging features
+	-* automated integration testing
+	-* would like better logging features, but I don't think I need them just yet
 
 TODO:
+	-> finish refactor
 
 	-* integration tests
 

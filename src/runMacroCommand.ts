@@ -6,7 +6,7 @@ import { containsWhileLoop } from "./sourceUtil";
 import { findMacroEditor, findTargetEditor } from "./editorFinding";
 import { TextDecoder, TextEncoder } from "util";
 import * as stringUtil from "./stringUtil";
-import { input } from "./input";
+import { input, exit } from "./basicFunctionality";
 import { getDefaultURI, osFileOpener } from "./fileUtil";
 
 export const runMacroCommandWithFilePicker = async () => {
@@ -72,6 +72,7 @@ If you aren't very sure that this code won't hang, ready up a Task Manager or co
         ...timerContainer.functions,
         ...stringUtil.stringUtilFunctions,
         input,
+        exit,
     ];
 
     // actually run the macro

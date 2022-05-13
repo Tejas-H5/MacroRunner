@@ -12,11 +12,9 @@ const createFunctionSection = ({ objectName, name, desc }) => {
 
     return `
 
-### ${async ? "async " : ""}${objectName ? objectName + "." : ""}${name}
+### \`${async ? "async " : ""}${objectName ? objectName + "." : ""}${name}\`
 
-> ${desc}
-
-`;
+> ${desc}`;
 };
 
 const createObjectSection = ({ heading, desc, methods, plans, objectName }) => {
@@ -33,8 +31,7 @@ ${
 ${plans.map((plan) => `- ${plan}`).join("\n")}
 `
         : ""
-}
-`;
+}`;
 };
 
 const documentation = [
@@ -45,19 +42,18 @@ const documentation = [
         objectName: "context",
         methods: [
             {
-                name: "rootDir:string",
-                desc: "Use this to get the project root fsPath. This will fallback to the document's folder if no folder is open, and then fallback to being `undefined` if the macro is being run on an untitled file.",
-            },
-            {
-                name: "getFile(index?=0) -> EditableFile",
+                name: "getFile() -> EditableFile",
                 desc: `Use \`getFile()\` to get the currently active file as an \`EditableFile\` object. 
-The index is zero by default, which points to the target file. 
-An index greater than 0 can be provided to access files that were newly created with \`newFile\`.`,
+I may be changing this method to accept a string, which you can use to get a file by name.`,
             },
             {
                 name: 'newFile(text="") -> EditableFile',
                 desc: `Use \`newFile()\` to create a new output file as an \`EditableObject\` object. 
 Text can be provided to set it's initial text.`,
+            },
+            {
+                name: "rootDir:string",
+                desc: "Use this to get the project root fsPath. This will fallback to the document's folder if no folder is open, and then fallback to being `undefined` if the macro is being run on an untitled file.",
             },
             {
                 name: "async outputImmediate()",
@@ -79,28 +75,25 @@ macro is ran.`,
         methods: [
             {
                 name: "text : string",
-                desc: `The text in this file. Make changes to this in your macro. 
-Optionally use \`setText\` instead of \`file.text=whatever\`, which will throw an exception
-if you are passing in something that isn't a string.`,
-            },
-            {
-                name: "selectedRanges : [rangeStart: number, rangeEnd: number][]",
-                desc: `The current ranges in the document that are selected. 
-Each number is a number index into the string.
-Changes to this array will be reflected in the document after the macro has finished running.
-If rangeStart and rangeEnd are both the same, you will have a cursor without anything selected. 
-If the range object is null, it will be ignored.`,
+                desc: `The text in this file. Make changes to this in your macro.`,
             },
             {
                 name: "setText(newText:string)",
                 desc: `Same as \`file.text = newText\`, but will throw an exception if the object you're passing isn't a \`typeof 'string'\` or \`instanceof String\`.
-The other functions don't do this kind of type checking, I can't be bothered adding it.`,
+The other functions won't do this kind of type checking (nor do I want to spend time adding it)`,
+            },
+            {
+                name: "selectedRanges : [rangeStart: number, rangeEnd: number][]",
+                desc: `The current ranges in the document that are selected. 
+A range is a tuple of integers \`[start, end]\`, which are indices into the string.
+If you only have cursor positions instead of selections, then both \`start\` and \`end\` will be the same.
+If the range object is null, it will be ignored.`,
             },
             {
                 name: "markUndoPoint()",
-                desc: `Save the value of file.text as an 'undo point'. 
+                desc: `Push the current value of file.text onto an array as an 'undo point'. 
 The extension will then replay all of these undo points onto the target document before the final output, 
-so that you can undo/redo between them - possibly for debugging purposes. `,
+so that you can undo/redo between them - possibly for debugging purposes.`,
             },
         ],
     },
@@ -108,11 +101,9 @@ so that you can undo/redo between them - possibly for debugging purposes. `,
         heading: "debug : DebugContext",
         desc: `This object is used to log things.`,
         plans: [
-            `Some way to log to a console of some sort. 
-I don't care to implement this for now because I can print text straight to the document, or use other debugging techniques`,
             `Breakpoints. 
-They would be awesome, but I have no idea how to add them. It may require a massive rewrite.
-Any PRers?`,
+They would be awesome, but I have no idea how to add them. It may require a massive rewrite, which I don't want to do.
+Ideas are welcome.`,
         ],
         objectName: "debug",
         methods: [
@@ -123,6 +114,41 @@ Any PRers?`,
             {
                 name: "async error(message)",
                 desc: `Pushes an error message notification in VS-Code`,
+            },
+        ],
+    },
+    {
+        heading: "...javascriptUtils",
+        desc: `These are normal javascript methods that have been directly injected, or overridden:`,
+        plans: [
+            `Low priority - Keyboard input. 
+Any PRers ?`,
+        ],
+        methods: [
+            {
+                name: "require() -> module",
+                desc: "JavaScript's require function, untouched. Use it to require whatever modules you need",
+            },
+            {
+                name: "async input(prompt: string) -> Promise<string>",
+                desc: `Provides a way to input arguments to your macros. You will need to use \`await\` with this method. 
+If the input was canceled, it returns null.`,
+            },
+            {
+                name: "exit(reason: string)",
+                desc: `Exits the program, and shows an info popup containing \`reason\` .
+You can technically just type \`return;\` to end the macro early since it's being pasted into an async Javascript function, but
+the editor does a red underline which is rightfully there but very distracting, so I added this method.`,
+            },
+            {
+                name: "SetInterval(callback, milliseconds) -> NodeJS.Timeout, SetTimeout(callback, milliseconds) -> NodeJS.Timeout, ClearInterval(timeout: NodeJS.Timeout), ClearTimeout(timeout: NodeJS.Timeout),",
+                desc: `These are actually wrappers for the normal javascript methods that interop better with this extension.
+It behaves exactly the same as the javascript method.`,
+            },
+            {
+                name: "loop(callback(count) -> bool, milliseconds, loopCount=undefined|number)",
+                desc: `A wrapper for the setInterval method that allows for a loop counter, and accepts a callback  
+that can return \`true\` to break out of the loop and anything else to keep looping `,
             },
         ],
     },
@@ -185,36 +211,6 @@ where start is the start of the match (inclusive) and end is the end of a match 
             {
                 name: "lastIndexAfter(text:string, str: string, position: number = -1)",
                 desc: `Same as indexOf but in the reverse direction, and 1 index after the string to remain consistent with indexAfter`,
-            },
-        ],
-    },
-    {
-        heading: "...javascriptUtils",
-        desc: `These are normal javascript methods that have been directly injected, or overridden:`,
-        plans: [
-            `Low priority - Keyboard input. 
-Any PRers ?`,
-        ],
-        methods: [
-            {
-                name: "require() -> module",
-                desc: "JavaScript's require function, untouched. Use it to require whatever modules you need",
-            },
-            {
-                name: "async input(prompt: string) -> Promise<string>",
-                desc: `Provides a way to input arguments to your macros. You will need to use \`await\` with this method. 
-This method will throw an exception if the input is canceled, and prevent the rest of the macro from running. 
-If you don't want this behaviour, put it in a try-catch.`,
-            },
-            {
-                name: "SetInterval(callback, milliseconds) -> NodeJS.Timeout, SetTimeout(callback, milliseconds) -> NodeJS.Timeout, ClearInterval(timeout: NodeJS.Timeout), ClearTimeout(timeout: NodeJS.Timeout),",
-                desc: `These are actually wrappers for the normal javascript methods that interop better with this extension.
-It behaves exactly the same as the javascript method.`,
-            },
-            {
-                name: "loop(callback(count) -> bool, milliseconds, loopCount=undefined|number)",
-                desc: `A wrapper for the setInterval method that allows for a loop counter, and accepts a callback  
-that can return \`true\` to break out of the loop and anything else to keep looping `,
             },
         ],
     },
