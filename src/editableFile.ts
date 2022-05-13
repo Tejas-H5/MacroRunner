@@ -89,7 +89,10 @@ export default class EditableFile {
             }
 
             this.editor = targetEditor;
-            await replaceAllFile(this, doc, targetEditor.viewColumn, true);
+
+            if (this.editor.document.getText() !== this.text) {
+                await replaceAllFile(this, doc, targetEditor.viewColumn, true);
+            }
         });
 
         if (document && this.editor) {
