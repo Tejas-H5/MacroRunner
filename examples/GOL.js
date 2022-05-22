@@ -1,14 +1,28 @@
-// macro : Conway's Game of life
+// macro : Turns some text into Conway's Game of life
+// homework: write a macro that generates a random starting state and
+// run that before running this one
 
 let board = [];
 const size = 50;
 
 const file = context.getFile();
+let existing = file.text.split("\n");
 
 for (let i = 0; i < size; i++) {
     board[i] = [];
     for (let j = 0; j < size; j++) {
-        board[i].push(Math.random() > 0.5 ? " " : "*");
+        if (i >= existing.length) {
+            break;
+        }
+
+        let c1 = existing[i][j * 2];
+        let c2 = existing[i][j * 2 + 1];
+
+        if (c1 && c1 !== " " && c2 && c2 !== " ") {
+            board[i].push("*");
+        } else {
+            board[i].push(" ");
+        }
     }
 }
 
@@ -22,7 +36,7 @@ for (let i = 0; i < size; i++) {
 }
 
 const count = (x, y) => {
-    const res = [
+    const counts = [
         board[y - 1] && board[y - 1][x - 1],
         board[y - 1] && board[y - 1][x],
         board[y - 1] && board[y - 1][x + 1],
@@ -31,7 +45,14 @@ const count = (x, y) => {
         board[y + 1] && board[y + 1][x - 1],
         board[y + 1] && board[y + 1][x],
         board[y + 1] && board[y + 1][x + 1],
-    ].reduce((prev, curr) => (curr && curr !== " " ? prev + 1 : prev), 0);
+    ];
+
+    let res = 0;
+    for (let i = 0; i < counts.length; i++) {
+        if (counts[i] && counts[i] !== " ") {
+            res += 1;
+        }
+    }
 
     return res;
 };
@@ -60,6 +81,6 @@ loop(
 
         context.outputImmediate();
     },
-    300,
-    100
+    100,
+    50
 );

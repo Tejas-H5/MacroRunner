@@ -60,7 +60,8 @@ Text can be provided to set it's initial text.`,
                 desc: `Use \`outputImmediate()\` to push the current text directly to the target file immediately.
 This has no real world use other than novelty, in that it can be used along with \`setInterval\`/\`loop\` to make animations.
 There was no real reason for me to add this, or the interval method overrides, I just did it for fun.
-See the GOL example to see how to use`,
+See the GOL example from the examples folder to see how to use:
+![Running saved macros](./gifs/gol.gif)`,
             },
         ],
     },
@@ -132,7 +133,8 @@ Any PRers ?`,
             {
                 name: "async input(prompt: string) -> Promise<string>",
                 desc: `Provides a way to input arguments to your macros. You will need to use \`await\` with this method. 
-If the input was canceled, it returns null.`,
+If the input was canceled, it returns null.
+![Running saved macros](./gifs/inputting.gif)`,
             },
             {
                 name: "exit(reason: string)",
@@ -148,7 +150,9 @@ It behaves exactly the same as the javascript method.`,
             {
                 name: "loop(callback(count) -> bool, milliseconds, loopCount=undefined|number)",
                 desc: `A wrapper for the setInterval method that allows for a loop counter, and accepts a callback  
-that can return \`true\` to break out of the loop and anything else to keep looping `,
+that can return \`true\` to break out of the loop and anything else to keep looping.
+This method is a bit unstable at the moment. I am not sure why, and since I almost never use it in macros
+I may not be fixing this for quite some time`,
             },
         ],
     },
