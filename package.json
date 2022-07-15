@@ -2,7 +2,7 @@
     "name": "macro-runner",
     "displayName": "Macro Runner",
     "description": "Make edits to text files with Javascript",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "engines": {
         "vscode": "^1.65.0"
     },

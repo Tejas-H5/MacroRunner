@@ -2,7 +2,7 @@
 
 Note that this extension is currently in a phase where the API will change drastically from release to release.
 
-## 1.2.3 The macro update 2022/05/22
+## 1.2.4 The macro update 2022/05/22
 
 -   Improved documentation
 -   Improved API for selected ranges.
@@ -14,6 +14,7 @@ Note that this extension is currently in a phase where the API will change drast
     -   Needed to handle case of `input` being canceled, so I made this.
 -   Changed command naming convention to be faster
 -   1.2.3: Added one of those fancy gif things to the documentation.
+-   1.2.4 2022/07/16: I just noticed that these gifs are way too zoomed out. hopefully this fixes things
 
 ## 1.1.0 2022/04/06
 
