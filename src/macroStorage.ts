@@ -1,39 +1,30 @@
 import { TextDecoder, TextEncoder } from "util";
 import * as vscode from "vscode";
-import { macrosUri } from "./extension";
+
+import { getMacroURI } from "./extension";
 import { findAvailableEditors, findMacroEditor, findTargetEditor } from "./editorFinding";
+import { HardError, handleErrors } from "./logging";
+import { defaultMacro, defaultMacroCursorIndex } from "./macroTemplates";
 import { runMacro } from "./runMacroCommand";
-import { replaceAll } from "./editableFile";
 
-const ensureMacrosDir = async () => {
-    if (macrosUri === null) {
-        throw new Error("Macros directory is unknown");
-    }
-
-    await vscode.workspace.fs.createDirectory(macrosUri);
-    return macrosUri;
+export const openMacrosDirCommand = async () => {
+    handleErrors(async () => {
+        const dir = getMacroURI();
+        vscode.commands.executeCommand("revealFileInOS", dir);
+    });
 };
 
-export const openMacrosDir = async () => {
-    const dir = await ensureMacrosDir();
-    vscode.commands.executeCommand("revealFileInOS", dir);
-};
-
-const getSavedMacros = async () => {
-    const dir = await ensureMacrosDir();
+const getSavedMacroNames = async () => {
+    const dir = getMacroURI();
     const dirContents = await vscode.workspace.fs.readDirectory(dir);
-
     const files = dirContents.filter((c) => c[1] === vscode.FileType.File).map((c) => c[0]);
     return files;
 };
 
-const pickExistingMacro = async (inputTitle: string) => {
-    const savedMacrosNamed = await getSavedMacros();
+const quickPickSavedMacro = async (inputTitle: string): Promise<string> => {
+    const savedMacrosNamed = await getSavedMacroNames();
     if (savedMacrosNamed.length === 0) {
-        vscode.window.showInformationMessage(
-            "You haven't saved any macros with the Save Macro command yet"
-        );
-        return;
+        throw new HardError("You haven't saved any macros with the Save Macro command yet");
     }
 
     const input = await vscode.window.showQuickPick(savedMacrosNamed, {
@@ -41,111 +32,99 @@ const pickExistingMacro = async (inputTitle: string) => {
         matchOnDescription: true,
         matchOnDetail: true,
     });
+    if (!input) {
+        throw new HardError("command aborted");
+    }
 
     return input;
 };
 
 export const saveMacroCommand = async () => {
-    const dir = macrosUri;
-    if (dir === null) {
-        throw new Error("Macros directory is unknown");
-    }
+    handleErrors(async () => {
+        const dir = getMacroURI();
 
-    try {
-        const macroEditor = findMacroEditor();
-        const macroEditorDocument = macroEditor.document;
+        let editor = findMacroEditor();
+        const document = editor.document;
 
-        const input = await vscode.window.showInputBox({
+        let fileName = await vscode.window.showInputBox({
             title: "Name this macro:",
         });
-
-        if (input === undefined) return;
-        let fileName = input;
+        if (!fileName) {
+            return;
+        }
         if (!fileName.toLowerCase().endsWith(".js")) {
             fileName += ".js";
         }
 
-        // no clean way to save-as, so we are going to write a new file,
+        // no one-liner to save-as, so we are going to write a new file,
         // close the existing one, then load the file we just wrote
-        const text = macroEditorDocument.getText();
         const filepath = vscode.Uri.joinPath(dir, fileName);
-        const enc = new TextEncoder();
+        const text = document.getText();
+        const textBytes = new TextEncoder().encode(text);
+        await vscode.workspace.fs.writeFile(filepath, textBytes);
 
-        await vscode.workspace.fs.writeFile(filepath, enc.encode(text));
+        if (document.isUntitled) {
+            // no clean way to close an untitled document, so we are just going to
+            // replace with nothing so that we can bypass the 'do you want to save?' warning
 
-        await vscode.window
-            .showTextDocument(macroEditorDocument, macroEditor.viewColumn)
-            .then(async (editor) => {
-                if (macroEditorDocument.isUntitled) {
-                    // no clean way to close an untitled document, so we are just going to
-                    // replace with nothing so that we can bypass the 'do you want to save?' warning
-                    await replaceAll("", editor.document, editor.viewColumn, false).then(() => {
-                        vscode.commands.executeCommand("workbench.action.closeActiveEditor");
-                    });
-                }
-
-                await loadMacro(fileName);
+            await editor.edit((editBuilder) => {
+                editBuilder.delete(
+                    new vscode.Range(new vscode.Position(0, 0), document.positionAt(text.length))
+                );
             });
-    } catch (err: any) {
-        vscode.window.showErrorMessage(err.message);
-    }
+
+            await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+        }
+
+        await loadMacro(fileName);
+    });
 };
 
-const loadMacro = async (input: string) => {
-    const dir = macrosUri;
-    if (dir === null) return;
+const loadMacroText = async (macroName: string) => {
+    const dir = getMacroURI();
+    const fileURI = vscode.Uri.joinPath(dir, macroName);
+    const fileBytes = await vscode.workspace.fs.readFile(fileURI);
+    const fileText = new TextDecoder().decode(fileBytes);
 
-    try {
-        const document = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(dir, input));
-        await showDocument(document);
-        vscode.window.showInformationMessage("Loaded " + input);
-    } catch (err: any) {
-        vscode.window.showErrorMessage(err.message);
-    }
+    return fileText;
+};
+
+const loadMacro = async (macroName: string) => {
+    const macroText = await loadMacroText(macroName);
+    await openMacroTextInAdjacentColum(macroText);
+    vscode.window.showInformationMessage("Loaded " + macroName);
 };
 
 export const loadMacroCommand = async () => {
-    const input = await pickExistingMacro("pick a macro to load");
-    if (input === undefined) return;
-
-    await loadMacro(input);
+    handleErrors(async () => {
+        const input = await quickPickSavedMacro("Pick a macro to load");
+        await loadMacro(input);
+    });
 };
 
 export const runSavedMacroCommand = async () => {
-    const input = await pickExistingMacro("pick a macro to load");
-    if (input === undefined) return;
+    handleErrors(async () => {
+        const input = await quickPickSavedMacro("Pick a macro to run");
+        if (!input) {
+            return;
+        }
 
-    const dir = macrosUri;
-    if (dir === null) return;
-
-    try {
-        const fileContentsRaw: Uint8Array = await vscode.workspace.fs.readFile(
-            vscode.Uri.joinPath(dir, input)
-        );
-
-        const macroSource = new TextDecoder().decode(fileContentsRaw);
+        const macroText = await loadMacroText(input);
         const targetEditor = findTargetEditor();
 
-        await runMacro(macroSource, targetEditor);
-    } catch (err: any) {
-        vscode.window.showErrorMessage(err.message);
-    }
+        await runMacro(macroText, targetEditor);
+    });
 };
 
 export const removeMacroCommand = async () => {
-    const input = await pickExistingMacro("pick a macro to load");
-    if (input === undefined) return;
+    handleErrors(async () => {
+        const dir = getMacroURI();
 
-    const dir = macrosUri;
-    if (dir === null) return;
+        const input = await quickPickSavedMacro("pick a macro to delete");
 
-    try {
         const answer = await vscode.window.showWarningMessage(
             "Are you sure you want to delete the macro " + input + " ?",
-            {
-                modal: true,
-                detail: "It will be moved to the recycle bin if possible. What's the deal with the recycle bin anyway? what exactly are we recycling?",
-            },
+            { modal: true },
             "Yes",
             "No"
         );
@@ -158,64 +137,58 @@ export const removeMacroCommand = async () => {
             useTrash: true,
         });
 
-        vscode.window.showInformationMessage("Deleted " + input);
-    } catch (err: any) {
-        vscode.window.showErrorMessage(err.message);
-    }
-};
-
-const defaultMacro = `// macro 
-// read documentation for injected objects like 'file', 'context', etc on the extension page
-
-const file = context.getFile();
-let text = "" + file.text;  // a hacky way to get autocomplete
-
-#cursor
-
-file.setText(text);
-`;
-
-const showDocument = async (
-    document: vscode.TextDocument,
-    cursorIndex: number | undefined = undefined
-) => {
-    let visibleEditors = findAvailableEditors();
-    const activeTextEditor = vscode.window.activeTextEditor;
-    let column: vscode.ViewColumn;
-    if (visibleEditors.length === 1) {
-        column = vscode.ViewColumn.Beside;
-    } else if (activeTextEditor && activeTextEditor.viewColumn && visibleEditors.length > 1) {
-        // columns are 1-indexed
-        column = (activeTextEditor.viewColumn % visibleEditors.length) + 1;
-    } else {
-        column = vscode.ViewColumn.Active;
-    }
-
-    await vscode.window.showTextDocument(document, column).then((editor) => {
-        if (cursorIndex === undefined) {
-            cursorIndex = editor.document.getText().length - 1;
-        }
-
-        editor.selection = new vscode.Selection(
-            editor.document.positionAt(cursorIndex),
-            editor.document.positionAt(cursorIndex)
-        );
+        await vscode.window.showInformationMessage("Deleted " + input);
     });
 };
 
-export const newMacroCommand = async () => {
-    let text = defaultMacro;
-    let selIndex = text.indexOf("#cursor");
-    if (selIndex === -1) {
-        selIndex = text.length - 1;
-    } else {
-        text = text.replace("#cursor", "");
+const getAdjacentColumn = () => {
+    let visibleEditors = findAvailableEditors();
+    if (visibleEditors.length === 0) {
+        // No editors open currently, just open in the active column.
+        // Not all macros are necessarily for analyzing the currently open file, we may want to write something
+        // to quickly look over all files in the workspace, so it makes sense to allow this
+        return vscode.ViewColumn.Active;
     }
+
+    if (visibleEditors.length === 1) {
+        // We can just open a macro next to the sole editor
+        return vscode.ViewColumn.Beside;
+    }
+
+    const activeTextEditor = vscode.window.activeTextEditor;
+    if (activeTextEditor && activeTextEditor.viewColumn) {
+        // Open the macro in one of the existing columns, hoping that it is next to the one we want.
+        // TODO: improve this approach
+        return (activeTextEditor.viewColumn % visibleEditors.length) + 1;
+    }
+
+    return vscode.ViewColumn.Active;
+};
+
+const openMacroTextInAdjacentColum = async (
+    text: string,
+    initialCursorIndex: number | undefined = undefined
+) => {
+    const column = getAdjacentColumn();
 
     let document = await vscode.workspace.openTextDocument({
         content: text,
         language: "javascript",
     });
 
-    showDocument(document, selIndex);
+    const editor = await vscode.window.showTextDocument(document, column);
+    if (initialCursorIndex === undefined) {
+        initialCursorIndex = editor.document.getText().length - 1;
+    }
+
+    editor.selection = new vscode.Selection(
+        editor.document.positionAt(initialCursorIndex),
+        editor.document.positionAt(initialCursorIndex)
+    );
+};
+
+export const newMacroCommand = async () => {
+    handleErrors(async () => {
+        await openMacroTextInAdjacentColum(defaultMacro, defaultMacroCursorIndex);
+    });
 };

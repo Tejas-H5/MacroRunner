@@ -4,18 +4,29 @@ import {
     saveMacroCommand,
     removeMacroCommand,
     newMacroCommand,
-    openMacrosDir,
+    openMacrosDirCommand,
     runSavedMacroCommand,
 } from "./macroStorage";
 import { runMacroCommand, runMacroCommandWithFilePicker } from "./runMacroCommand";
+import { HardError } from "./logging";
 
-export var macrosUri: vscode.Uri | null = null;
+var macrosUri: vscode.Uri | null = null;
+
+/**  throws if macroUri was null for some reason (this is unlikely, but it could probably happen idk) */
+export const getMacroURI = () => {
+    if (!macrosUri) {
+        throw new HardError("Macro URI was null");
+    }
+
+    return macrosUri;
+};
 
 export function activate(context: vscode.ExtensionContext) {
     console.log("Macro Runner extension is now active!");
 
     const storagePath = context.globalStorageUri;
     macrosUri = vscode.Uri.joinPath(storagePath, "macros");
+    vscode.workspace.fs.createDirectory(macrosUri); // ensure this directory always exists
 
     const withProgress = (message: string, commandFunction: () => Promise<void>) => {
         return () => {
@@ -27,6 +38,13 @@ export function activate(context: vscode.ExtensionContext) {
     };
 
     context.subscriptions.push(
+        // Creating macros
+        vscode.commands.registerCommand(
+            "MacroRunner.newMacro",
+            withProgress("creating new macro...", newMacroCommand)
+        ),
+
+        // Running macros
         vscode.commands.registerCommand(
             "MacroRunner.runMacro",
             withProgress("macro running...", runMacroCommand)
@@ -39,10 +57,10 @@ export function activate(context: vscode.ExtensionContext) {
             "MacroRunner.runSavedMacro",
             withProgress("macro running...", runSavedMacroCommand)
         ),
-        vscode.commands.registerCommand(
-            "MacroRunner.newMacro",
-            withProgress("creating new macro...", newMacroCommand)
-        ),
+
+        // TODO: run macro 1 to run macro 10, and have config to set these file names.
+
+        // Saving and loading macros
         vscode.commands.registerCommand(
             "MacroRunner.loadMacro",
             withProgress("loading macro...", loadMacroCommand)
@@ -57,7 +75,7 @@ export function activate(context: vscode.ExtensionContext) {
         ),
         vscode.commands.registerCommand(
             "MacroRunner.openMacrosDirectory",
-            withProgress("opening macro...", openMacrosDir)
+            withProgress("opening macro...", openMacrosDirCommand)
         )
     );
 }

@@ -9,7 +9,7 @@ export const getDefaultURI = () => {
     return uri;
 };
 
-export const osFileOpener = async (uri: vscode.Uri | undefined) => {
+export const filePicker = async (uri: vscode.Uri | undefined) => {
     if (!uri) return;
 
     const files = await vscode.window.showOpenDialog({

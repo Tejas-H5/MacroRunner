@@ -2,6 +2,13 @@
 
 Note that this extension is currently in a phase where the API will change drastically from release to release.
 
+## 2.0.0 The API improvement update 2023/X
+
+Lots of breaking changes in this one:
+
+-   The new macro starting template has been overhauled to be fully self-contained and self-documenting, without requiring a user to read the entire extension's README.
+-   The extension's functionality has been almost completely overhauled, with a far better API that fixes a lot of the issues that I have had, and additional capabilities like logging, and reading/writing to arbitrary files in the workspace. There is no backwards compatibility - old macros will no longer work, and will need to be rewritten with the new API
+
 ## 1.2.4 The macro update 2022/05/22
 
 -   Improved documentation

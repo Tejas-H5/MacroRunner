@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { HardError } from "./logging";
 
 export const findAvailableEditors = () => {
     let visibleEditors = vscode.window.visibleTextEditors;
@@ -14,20 +15,20 @@ export const findMacroEditor = () => {
 
     let macroEditors = visibleEditors.filter((editor) => {
         const code = editor.document.getText();
-        const containsSafetyCatch = code.startsWith("// macro");
+        const containsSafetyCatch = code.startsWith("// macro v2");
 
         return containsSafetyCatch;
     });
 
     if (macroEditors.length === 0) {
-        throw new Error(
-            "Make sure your macro starts with '// macro' (this is a safety catch), or that you have the right file visible"
+        throw new HardError(
+            "Make sure your macro starts with '// macro v2' (this is a safety catch), or that you have the right file visible"
         );
     }
 
     if (macroEditors.length > 1) {
-        throw new Error(
-            "Found multiple macros, make sure that only the macro you want to run is visible."
+        throw new HardError(
+            "Found multiple macros open, make sure that only the macro you want to run is visible."
         );
     }
 
@@ -52,7 +53,7 @@ export const findTargetEditor = (
         }
 
         if (visibleEditors.length > 1) {
-            throw new Error(
+            throw new HardError(
                 "When you have more than one editor open, bring focus to the one you want to run the macro in"
             );
         }
@@ -66,7 +67,7 @@ export const findTargetEditor = (
         }
 
         if (visibleEditors.length > 2) {
-            throw new Error(
+            throw new HardError(
                 "When you have more than two editors open, bring focus to the one you want to run the macro in"
             );
         }
@@ -76,7 +77,7 @@ export const findTargetEditor = (
         }
     }
 
-    throw new Error(
+    throw new HardError(
         `The macro file and the target file must both be visible.
 Also, this doesn't work for files larger than 50mb, use the command 'Run Macro (for large files > 50mb)'`
     );
