@@ -5,13 +5,8 @@ import { getDefaultURI, filePicker } from "./fileUtil";
 import { HardError, SoftError, handleErrors, handleErrorsSync } from "./logging";
 import { typeAssertRangeArray, typeAssertString } from "./typeAssertions";
 import { getOutputChannel } from "./extension";
-import { cursed_spinAwait } from "./cursed";
 
 var currentlyRunning: ExecutionContext[] = [];
-
-// TODO:
-//  - setFileText
-//  - cancelToken
 
 export const runMacroCommandWithFilePicker = async () =>
     handleErrors(async () => {
@@ -83,7 +78,6 @@ class ExecutionContext {
     constructor(targetEditor: vscode.TextEditor) {
         this.targetEditor = targetEditor;
         this.targetDocument = targetEditor.document;
-        this.outputChannel.clear();
     }
 }
 
@@ -105,18 +99,14 @@ const newMacroContext = (executionContext: ExecutionContext) => {
         exit: macroEarlyExit,
         processRanges: (text: any, ranges: any, processFunc: any) =>
             processRanges(executionContext, text, ranges, processFunc),
-        console: {
-            log: (...messages: any[]) => logToOutput(executionContext, ...messages),
-            error: (...messages: any[]) => errorToOutput(executionContext, ...messages),
-            clear: () => clearOutput(executionContext),
-        },
 
         walkWorkspaceFilesTopDown,
         walkWorkspaceFilesBottomUp,
         getFileText: (uri: any) => macroGetFileText(uri),
-        setFileText: (uri: any, text: string) => macroSetFileText(executionContext, uri, text), // TODO: test
+        setFileText: (uri: any, text: string) => macroSetFileText(executionContext, uri, text),
 
-        applyChangesImmediately: () => applyChangesToActiveFile(executionContext, true),
+        applyChangesImmediately: (shouldUndo: any) =>
+            applyChangesToActiveFile(executionContext, !!shouldUndo),
 
         sleep: (ms: any) => executionContext.timerStore!.sleep(ms),
 
@@ -127,9 +117,14 @@ const newMacroContext = (executionContext: ExecutionContext) => {
             setInterval: dontUseTimeoutFunctions,
             clearInterval: dontUseTimeoutFunctions,
             clearTimeout: dontUseTimeoutFunctions,
+            console: {
+                log: (...messages: any[]) => logToOutput(executionContext, ...messages),
+                error: (...messages: any[]) => errorToOutput(executionContext, ...messages),
+                clear: () => clearOutput(executionContext),
+            },
         },
 
-        cancelSignal: executionContext.cancelSignal,
+        isCancelled: () => executionContext.cancelSignal.isCancelled,
     };
 
     return macroContext;
@@ -177,6 +172,8 @@ export const runMacro = async (code: string, targetEditor: vscode.TextEditor) =>
         const macroContext = newMacroContext(executionContext);
         const overrideNames = Object.keys(macroContext.overrides);
 
+        executionContext.outputChannel.clear();
+
         const macroSource = `"use strict";
     return (async (context, overrides) => {
         const { ${overrideNames.join(", ")} } = overrides;\n
@@ -189,14 +186,26 @@ export const runMacro = async (code: string, targetEditor: vscode.TextEditor) =>
 
         // ---- apply execution result
 
-        let workspaceEdit: vscode.WorkspaceEdit | null = null;
+        if (executionContext.selectedRanges) {
+            // apply new cursor positions/highlights
+            const selectedRangesToVscodeRanges = executionContext.selectedRanges.map(
+                (range) =>
+                    new vscode.Selection(
+                        executionContext.targetDocument.positionAt(range[0]),
+                        executionContext.targetDocument.positionAt(range[1])
+                    )
+            );
 
+            targetEditor.selections = selectedRangesToVscodeRanges;
+        }
+
+        let workspaceEdit: vscode.WorkspaceEdit | null = null;
         let promises: Thenable<any>[] = [];
 
         for (const [fileURIKey, change] of executionContext.changes.entries()) {
             if (fileURIKey === executionContext.activeFileKey) {
                 // apply changes to the active file
-                const promise = applyChangesToActiveFile(executionContext, false);
+                const promise = applyChangesToActiveFile(executionContext, true);
                 promises.push(promise);
                 continue;
             }
@@ -238,8 +247,6 @@ const cancelAllMacros = () => {
     for (let i = 0; i < currentlyRunning.length; i++) {
         currentlyRunning[i].cancelSignal.isCancelled = true;
     }
-
-    currentlyRunning.splice(0, currentlyRunning.length);
 };
 
 const getUserInput = async (promptTextAny: any): Promise<string | undefined> => {
@@ -314,12 +321,14 @@ const processRanges = (
         const index = 1 + i * 2;
         rangeArray[i][0] = currentPos;
 
-        // TODO: if we are processing ranges in a non-adjacent file, then this is wrong.
-        // Should just increment by normal length, then adjust for the real length when applying the chanes at the end
+        // TODO: if we are processing ranges in a non-adjacent file, then calculating the realLength here is wrong.
+        // Should just increment by normal length, then adjust for the real length when applying the changes at the end.
+        // However, processRanges is only used when editing selectedRanges, which are always in relation to the adjacent file, so this is
+        // not something we really need to worry about right now.
+
         currentPos += realLength(stringBuilder[index], executionContext.targetDocument.eol);
         rangeArray[i][1] = currentPos;
 
-        // TODO: same here
         currentPos += realLength(stringBuilder[index + 1], executionContext.targetDocument.eol);
     }
 
@@ -400,7 +409,7 @@ const toLogObjectString = (obj: any) => {
         return obj;
     }
 
-    // TODO: implement %v style printing, so it works on most objects
+    // TODO: implement %v style printing, so it will work well for most objects
     if (obj) {
         const str = obj.toString();
         if (typeof str === "string" && str !== "[object Object]") {
@@ -415,7 +424,10 @@ const toLogObjectString = (obj: any) => {
     }
 };
 
-const applyChangesToActiveFile = async (executionContext: ExecutionContext, isMidRun: boolean) => {
+const applyChangesToActiveFile = async (
+    executionContext: ExecutionContext,
+    shouldUndo: boolean
+) => {
     const { changes, targetEditor, activeFileKey } = executionContext;
     const targetDocument = targetEditor.document;
 
@@ -438,23 +450,10 @@ const applyChangesToActiveFile = async (executionContext: ExecutionContext, isMi
             edit.replace(entireDocumentRange, val.newText);
         },
         {
-            undoStopAfter: true,
-            undoStopBefore: true,
+            undoStopAfter: shouldUndo,
+            undoStopBefore: shouldUndo,
         }
     );
-
-    if (!isMidRun && !!executionContext.selectedRanges) {
-        // apply new cursor positions/highlights
-        const selectedRangesToVscodeRanges = executionContext.selectedRanges.map(
-            (range) =>
-                new vscode.Selection(
-                    targetDocument.positionAt(range[0]),
-                    targetDocument.positionAt(range[1])
-                )
-        );
-
-        targetEditor.selections = selectedRangesToVscodeRanges;
-    }
 };
 
 type FileProcessFunc = (filepath: vscode.Uri) => Promise<any>;

@@ -1,13 +1,18 @@
 # Change Log
 
-Note that this extension is currently in a phase where the API will change drastically from release to release.
+The API has almost stabilized. There may be a few breaking changes here and there though
 
-## 2.0.0 The API improvement update 2023/X
+## 2.0.0 The API-V2 update 2023/10/2
 
 Lots of breaking changes in this one:
 
--   The new macro starting template has been overhauled to be fully self-contained and self-documenting, without requiring a user to read the entire extension's README.
--   The extension's functionality has been almost completely overhauled, with a far better API that fixes a lot of the issues that I have had, and additional capabilities like logging, and reading/writing to arbitrary files in the workspace. There is no backwards compatibility - old macros will no longer work, and will need to be rewritten with the new API
+-   The new macro starting template has been overhauled to be fully self-contained and self-documenting, because I kept forgetting it
+-   The API itself has been trimmed down and simplified.
+-   Several new features, like a working console.log in the global namespace, getting/setting text in arbitrary workspace files and walking all workspace files
+-   processRanges helper function. There were a lot of times where I wanted to write a quick macro to modify all the stuff I had selected, but this was too hard to do before this helper
+-   Old macros will no longer work, and will need to be rewritten with the new API (the new API is a lot better anyway)
+-   Removed timeout functions, added `sleep`, and a cancellation signal that can be used to terminate macros (infinite loops are still very easy to make though)
+-   Updated readme, and examples
 
 ## 1.2.4 The macro update 2022/05/22
 

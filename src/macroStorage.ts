@@ -89,7 +89,7 @@ const loadMacroText = async (macroName: string) => {
 
 const loadMacro = async (macroName: string) => {
     const macroText = await loadMacroText(macroName);
-    await openMacroTextInAdjacentColum(macroText);
+    await openMacroTextInAdjacentColumn(macroText);
     vscode.window.showInformationMessage("Loaded " + macroName);
 };
 
@@ -140,7 +140,7 @@ const getAdjacentColumn = () => {
     let visibleEditors = findAvailableEditors();
     if (visibleEditors.length === 0) {
         // No editors open currently, just open in the active column.
-        // Not all macros are necessarily for analyzing the currently open file, we may want to write something
+        // Not all macros are necessarily for analysing the currently open file, we may want to write something
         // to quickly look over all files in the workspace, so it makes sense to allow this
         return vscode.ViewColumn.Active;
     }
@@ -153,14 +153,13 @@ const getAdjacentColumn = () => {
     const activeTextEditor = vscode.window.activeTextEditor;
     if (activeTextEditor && activeTextEditor.viewColumn) {
         // Open the macro in one of the existing columns, hoping that it is next to the one we want.
-        // TODO: improve this approach
         return (activeTextEditor.viewColumn % visibleEditors.length) + 1;
     }
 
     return vscode.ViewColumn.Active;
 };
 
-const openMacroTextInAdjacentColum = async (
+const openMacroTextInAdjacentColumn = async (
     text: string,
     initialCursorIndex: number | undefined = undefined
 ) => {
@@ -184,5 +183,5 @@ const openMacroTextInAdjacentColum = async (
 
 export const newMacroCommand = async () =>
     handleErrors(async () => {
-        await openMacroTextInAdjacentColum(defaultMacro, defaultMacroCursorIndex);
+        await openMacroTextInAdjacentColumn(defaultMacro, defaultMacroCursorIndex);
     });
