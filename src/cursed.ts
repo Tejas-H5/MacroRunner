@@ -1,16 +1,16 @@
 import * as vscode from "vscode";
 import { typeAssertString } from "./typeAssertions";
 
-export const cursed_spinAwait = <T>(promise: Thenable<T>, timeoutMS: number = 5000): T => {
-    let isDone = false;
+export const cursed_spinAwait = <T>(promiseFn: () => Thenable<T>, timeoutMS: number = 5000): T => {
+    let isDone = { signal: false };
     let resAny: any = null;
-    promise.then((res) => {
+    promiseFn().then((res) => {
         resAny = res;
-        isDone = true;
+        isDone.signal = true;
     });
 
     const now = Date.now();
-    while (!isDone) {
+    while (!isDone.signal) {
         if (Date.now() - now > timeoutMS) {
             throw new Error("Timeout for spinlock exceeded");
         }

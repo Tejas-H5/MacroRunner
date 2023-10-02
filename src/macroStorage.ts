@@ -7,12 +7,11 @@ import { HardError, handleErrors } from "./logging";
 import { defaultMacro, defaultMacroCursorIndex } from "./macroTemplates";
 import { runMacro } from "./runMacroCommand";
 
-export const openMacrosDirCommand = async () => {
+export const openMacrosDirCommand = async () =>
     handleErrors(async () => {
         const dir = getMacroURI();
         vscode.commands.executeCommand("revealFileInOS", dir);
     });
-};
 
 const getSavedMacroNames = async () => {
     const dir = getMacroURI();
@@ -39,7 +38,7 @@ const quickPickSavedMacro = async (inputTitle: string): Promise<string> => {
     return input;
 };
 
-export const saveMacroCommand = async () => {
+export const saveMacroCommand = async () =>
     handleErrors(async () => {
         const dir = getMacroURI();
 
@@ -78,7 +77,6 @@ export const saveMacroCommand = async () => {
 
         await loadMacro(fileName);
     });
-};
 
 const loadMacroText = async (macroName: string) => {
     const dir = getMacroURI();
@@ -95,14 +93,13 @@ const loadMacro = async (macroName: string) => {
     vscode.window.showInformationMessage("Loaded " + macroName);
 };
 
-export const loadMacroCommand = async () => {
+export const loadMacroCommand = async () =>
     handleErrors(async () => {
         const input = await quickPickSavedMacro("Pick a macro to load");
         await loadMacro(input);
     });
-};
 
-export const runSavedMacroCommand = async () => {
+export const runSavedMacroCommand = async () =>
     handleErrors(async () => {
         const input = await quickPickSavedMacro("Pick a macro to run");
         if (!input) {
@@ -114,9 +111,8 @@ export const runSavedMacroCommand = async () => {
 
         await runMacro(macroText, targetEditor);
     });
-};
 
-export const removeMacroCommand = async () => {
+export const removeMacroCommand = async () =>
     handleErrors(async () => {
         const dir = getMacroURI();
 
@@ -139,7 +135,6 @@ export const removeMacroCommand = async () => {
 
         await vscode.window.showInformationMessage("Deleted " + input);
     });
-};
 
 const getAdjacentColumn = () => {
     let visibleEditors = findAvailableEditors();
@@ -187,8 +182,7 @@ const openMacroTextInAdjacentColum = async (
     );
 };
 
-export const newMacroCommand = async () => {
+export const newMacroCommand = async () =>
     handleErrors(async () => {
         await openMacroTextInAdjacentColum(defaultMacro, defaultMacroCursorIndex);
     });
-};

@@ -27,19 +27,13 @@
         "url": "https://github.com/El-Tejaso/MacroRunner"
     },
     "publisher": "El-Tejaso",
-    "activationEvents": [
-        "onCommand:MacroRunner.runMacro",
-        "onCommand:MacroRunner.runMacroLF",
-        "onCommand:MacroRunner.newMacro",
-        "onCommand:MacroRunner.loadMacro",
-        "onCommand:MacroRunner.saveMacro",
-        "onCommand:MacroRunner.removeMacro",
-        "onCommand:MacroRunner.openMacrosDirectory",
-        "onCommand:MacroRunner.runSavedMacro"
-    ],
     "main": "./out/extension.js",
     "contributes": {
         "commands": [
+            {
+                "command": "MacroRunner.newMacro",
+                "title": "New Macro (Macro Runner)"
+            },
             {
                 "command": "MacroRunner.runMacro",
                 "title": "Run Macro (Macro Runner)"
@@ -53,8 +47,8 @@
                 "title": "Run saved macro (Macro Runner)"
             },
             {
-                "command": "MacroRunner.newMacro",
-                "title": "New Macro (Macro Runner)"
+                "command": "MacroRunner.cancelAllMacros",
+                "title": "Cancel signal to running macros (Macro Runner)"
             },
             {
                 "command": "MacroRunner.loadMacro",

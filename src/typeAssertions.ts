@@ -7,8 +7,8 @@ export const typeAssertRangeArray = (rangeArray: any): [number, number][] => {
         if (
             !Array.isArray(rangeArray[i]) ||
             rangeArray[i].length !== 2 ||
-            typeof rangeArray[0] !== "number" ||
-            typeof rangeArray[1] !== "number"
+            typeof rangeArray[i][0] !== "number" ||
+            typeof rangeArray[i][1] !== "number"
         ) {
             throw new Error(`rangeArray[${i}] must be an array of numbers of length 2`);
         }

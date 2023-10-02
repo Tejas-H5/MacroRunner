@@ -4,9 +4,16 @@ import { TextDecoder, TextEncoder } from "util";
 import { getDefaultURI, filePicker } from "./fileUtil";
 import { HardError, SoftError, handleErrors, handleErrorsSync } from "./logging";
 import { typeAssertRangeArray, typeAssertString } from "./typeAssertions";
+import { getOutputChannel } from "./extension";
 import { cursed_spinAwait } from "./cursed";
 
-export const runMacroCommandWithFilePicker = async () => {
+var currentlyRunning: ExecutionContext[] = [];
+
+// TODO:
+//  - setFileText
+//  - cancelToken
+
+export const runMacroCommandWithFilePicker = async () =>
     handleErrors(async () => {
         const macroEditor = findMacroEditor();
         const macroCode = macroEditor.document.getText();
@@ -31,9 +38,8 @@ export const runMacroCommandWithFilePicker = async () => {
                 "For some reason, if the document is untitled, you can still use the normal Run Macro command on it even though it has the same amount of text. "
         );
     });
-};
 
-export const runMacroCommand = async () => {
+export const runMacroCommand = async () =>
     handleErrors(async () => {
         const macroEditor = findMacroEditor();
         const targetEditor = findTargetEditor(macroEditor);
@@ -41,51 +47,53 @@ export const runMacroCommand = async () => {
 
         await runMacro(macroSource, targetEditor);
     });
-};
+
+export const cancelAllMacrosCommand = async () =>
+    handleErrors(async () => {
+        cancelAllMacros();
+    });
 
 type FileChange = {
     fileUri?: vscode.Uri; // which file in this workspace to change? leaving this as undefined means changing the adjacent/active file
     newText: string; // the text to overwrite this file
 };
 
-const newExecutionContext = (targetEditor: vscode.TextEditor): ExecutionContext => {
-    // TODO: just make this the actual URI of the active file
-    const activeFileKey = "<active>";
-
-    const executionContext = {
-        selectedRanges: null,
-        changes: new Map<string, FileChange>(),
-        setChange: (change: FileChange) => {
-            const uri = change.fileUri;
-            const uriString = uri ? uri.scheme + "-" + uri.path : executionContext.activeFileKey;
-            executionContext.changes.set(uriString, change);
-        },
-        targetEditor,
-        targetDocument: targetEditor.document,
-        outputChannel: vscode.window.createOutputChannel("Macro Runner Output"),
-        activeFileKey,
-    };
-
-    return executionContext;
-};
-
-type ExecutionContext = {
-    selectedRanges: null | [number, number][];
-    changes: Map<string, FileChange>;
-    setChange: (change: FileChange) => void;
-    targetDocument: vscode.TextDocument;
+const ACTIVE_FILE_KEY = "<active>";
+class ExecutionContext {
+    activeFileKey = ACTIVE_FILE_KEY;
     targetEditor: vscode.TextEditor;
-    outputChannel: vscode.OutputChannel;
-    activeFileKey: string;
-};
+    targetDocument: vscode.TextDocument;
 
-export const runMacro = async (code: string, targetEditor: vscode.TextEditor) => {
-    const [timerStore, setTimeout, clearTimeout, setInterval, clearInterval] =
-        createIntervalTimeoutFunctions();
+    timerStore = newSleepTimer(this);
 
-    const executionContext = newExecutionContext(targetEditor);
+    selectedRanges: null | [number, number][] = null;
+    changes = new Map<string, FileChange>();
+    outputChannel = getOutputChannel();
+    cancelSignal = { isCancelled: false };
 
-    // ---- create macro context
+    setChange(change: FileChange) {
+        const uri = change.fileUri;
+        const uriString = uri ? uri.scheme + "-" + uri.path : ACTIVE_FILE_KEY;
+        this.changes.set(uriString, change);
+    }
+    async join() {
+        await this.timerStore.join();
+    }
+
+    constructor(targetEditor: vscode.TextEditor) {
+        this.targetEditor = targetEditor;
+        this.targetDocument = targetEditor.document;
+        this.outputChannel.clear();
+    }
+}
+
+const newMacroContext = (executionContext: ExecutionContext) => {
+    const dontUseTimeoutFunctions = () => {
+        // Ironing out the edge cases was too hard :(
+        throw new Error(
+            "Timeout functions are disabled for now. Use the `async context.sleep(ms: number)` function instead."
+        );
+    };
 
     const macroContext = {
         getText: () => getActiveFileText(executionContext),
@@ -95,127 +103,143 @@ export const runMacro = async (code: string, targetEditor: vscode.TextEditor) =>
 
         input: getUserInput,
         exit: macroEarlyExit,
-        processRanges: processRanges,
-
-        walkWorkspaceFilesTopDown,
-        walkWorkspaceFilesBottomUp,
-        getFileText: macroGetFileText,
-        setFileText: macroSetFileText,
-
+        processRanges: (text: any, ranges: any, processFunc: any) =>
+            processRanges(executionContext, text, ranges, processFunc),
         console: {
             log: (...messages: any[]) => logToOutput(executionContext, ...messages),
             error: (...messages: any[]) => errorToOutput(executionContext, ...messages),
+            clear: () => clearOutput(executionContext),
         },
 
-        setTimeout,
-        clearTimeout,
-        setInterval,
-        clearInterval,
+        walkWorkspaceFilesTopDown,
+        walkWorkspaceFilesBottomUp,
+        getFileText: (uri: any) => macroGetFileText(uri),
+        setFileText: (uri: any, text: string) => macroSetFileText(executionContext, uri, text), // TODO: test
+
         applyChangesImmediately: () => applyChangesToActiveFile(executionContext, true),
 
+        sleep: (ms: any) => executionContext.timerStore!.sleep(ms),
+
         require: require,
+
+        overrides: {
+            setTimeout: dontUseTimeoutFunctions,
+            setInterval: dontUseTimeoutFunctions,
+            clearInterval: dontUseTimeoutFunctions,
+            clearTimeout: dontUseTimeoutFunctions,
+        },
+
+        cancelSignal: executionContext.cancelSignal,
     };
 
-    // ---- run the macro
+    return macroContext;
+};
 
-    const macroSource = `"use strict";return (async (context) => {\n${code}\n});`;
-    const macroFunction = Function(macroSource)();
-    await macroFunction(macroContext);
+const newSleepTimer = (executionContext: ExecutionContext) => {
+    const sleepTimer = {
+        awaitUntil: Date.now(),
+        sleep: (ms: any) => {
+            if (typeof ms !== "number") {
+                throw new HardError("argument wasn't a number");
+            }
 
-    // wait for all timeouts to end
-    await timerStore.joinAll();
+            sleepTimer.awaitUntil = Date.now() + ms;
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve(undefined);
+                }, ms);
+            });
+        },
+        join: () =>
+            new Promise((resolve) => {
+                const interval = setInterval(() => {
+                    if (
+                        executionContext.cancelSignal.isCancelled ||
+                        sleepTimer.awaitUntil < Date.now()
+                    ) {
+                        clearInterval(interval);
+                        resolve(undefined);
+                    }
+                }, 500);
+            }),
+    };
 
-    // ---- apply execution result
+    return sleepTimer;
+};
 
-    for (const [fileURI, change] of executionContext.changes.entries()) {
-        if (fileURI === executionContext.activeFileKey) {
-            // apply changes to the active file
-            applyChangesToActiveFile(executionContext, false);
-            return;
+export const runMacro = async (code: string, targetEditor: vscode.TextEditor) => {
+    const executionContext = new ExecutionContext(targetEditor);
+    currentlyRunning.push(executionContext);
+
+    try {
+        // run the macro
+
+        const macroContext = newMacroContext(executionContext);
+        const overrideNames = Object.keys(macroContext.overrides);
+
+        const macroSource = `"use strict";
+    return (async (context, overrides) => {
+        const { ${overrideNames.join(", ")} } = overrides;\n
+        ${code}\n
+    });`;
+        const macroFunction = Function(macroSource)();
+        await macroFunction(macroContext, macroContext.overrides);
+
+        await executionContext.join();
+
+        // ---- apply execution result
+
+        let workspaceEdit: vscode.WorkspaceEdit | null = null;
+
+        let promises: Thenable<any>[] = [];
+
+        for (const [fileURIKey, change] of executionContext.changes.entries()) {
+            if (fileURIKey === executionContext.activeFileKey) {
+                // apply changes to the active file
+                const promise = applyChangesToActiveFile(executionContext, false);
+                promises.push(promise);
+                continue;
+            }
+
+            const uri = change.fileUri;
+            if (!uri) {
+                // this should not be possible, and is a bug. fileUri should only be undefined if fileURI === executionContext.activeFileKey
+                // which is handled above
+                continue;
+            }
+
+            if (!workspaceEdit) {
+                workspaceEdit = new vscode.WorkspaceEdit();
+            }
+
+            // apply changes to a file somewhere in the workspace
+            workspaceEdit.replace(
+                uri,
+                new vscode.Range(new vscode.Position(0, 0), new vscode.Position(2147483648, 0)),
+                change.newText
+            );
         }
 
-        // TODO: apply changes to arbitrary files in the workspace
+        if (workspaceEdit) {
+            const workspaceEditApplyPromise = vscode.workspace.applyEdit(workspaceEdit);
+            promises.push(workspaceEditApplyPromise);
+        }
+
+        await Promise.all(promises);
+    } catch (err) {
+        throw err;
+    } finally {
+        // TODO: check if race condition
+        currentlyRunning.splice(currentlyRunning.indexOf(executionContext), 1);
     }
 };
 
-const [setIntervalReal, clearIntervalReal, setTimeoutReal, clearTimeoutReal] = [
-    setInterval,
-    clearInterval,
-    setTimeout,
-    clearTimeout,
-];
+const cancelAllMacros = () => {
+    for (let i = 0; i < currentlyRunning.length; i++) {
+        currentlyRunning[i].cancelSignal.isCancelled = true;
+    }
 
-const newTimerStore = () => {
-    const timerStore = {
-        timeouts: new Map<NodeJS.Timeout, number>(),
-        // each timer stores when it will end, so that we can await it
-        setTime: (id: NodeJS.Timeout, millisecondsFromNow: number) => {
-            if (millisecondsFromNow === 0) {
-                timerStore.timeouts.delete(id);
-                return;
-            }
-
-            timerStore.timeouts.set(id, Date.now() + millisecondsFromNow);
-        },
-        joinAll: () => {
-            return new Promise<void>((resolve) => {
-                const values = timerStore.timeouts.values();
-                let waitUntil = 0;
-                for (const ms of values) {
-                    if (ms > waitUntil) {
-                        waitUntil = ms;
-                    }
-                }
-
-                const msToWait = waitUntil - Date.now() + 50; // + 50 for good luck
-                if (msToWait <= 0) {
-                    return resolve();
-                }
-
-                setTimeoutReal(() => {
-                    resolve();
-                }, msToWait);
-            });
-        },
-    };
-
-    return timerStore;
-};
-
-export type TimerStore = ReturnType<typeof newTimerStore>;
-
-const createIntervalTimeoutFunctions = () => {
-    const timerStore = newTimerStore();
-
-    const setInterval = (callback: (...args: any[]) => void, milliseconds?: number) => {
-        const timeout = setIntervalReal(() => {
-            handleErrorsSync(callback);
-            timerStore.setTime(timeout, milliseconds || 0);
-        }, milliseconds);
-
-        timerStore.setTime(timeout, milliseconds || 0);
-
-        return timeout;
-    };
-
-    const setTimeout = (callback: (...args: any[]) => void, milliseconds?: number) => {
-        const timeout = setTimeoutReal(() => handleErrorsSync(callback), milliseconds);
-        timerStore.setTime(timeout, milliseconds || 0);
-
-        return timeout;
-    };
-
-    const clearInterval = (timeoutID: NodeJS.Timeout) => {
-        clearIntervalReal(timeoutID);
-        timerStore.timeouts.set(timeoutID, 0);
-    };
-
-    const clearTimeout = (timeoutID: NodeJS.Timeout) => {
-        clearTimeoutReal(timeoutID);
-        timerStore.timeouts.set(timeoutID, 0);
-    };
-
-    return [timerStore, setTimeout, clearTimeout, setInterval, clearInterval] as const;
+    currentlyRunning.splice(0, currentlyRunning.length);
 };
 
 const getUserInput = async (promptTextAny: any): Promise<string | undefined> => {
@@ -243,6 +267,7 @@ const macroEarlyExit = (reasonAny: any) => {
 };
 
 const processRanges = (
+    executionContext: ExecutionContext,
     textAny: any,
     rangeArrayAny: any,
     processFunc: (input: string) => string
@@ -276,7 +301,7 @@ const processRanges = (
         const index = 1 + i * 2;
         stringBuilder[index] = processed;
 
-        if (i != rangeArray.length - 1) {
+        if (i !== rangeArray.length - 1) {
             stringBuilder[index + 1] = text.substring(range[1], rangeArray[i + 1][0]);
         } else {
             stringBuilder[index + 1] = text.substring(range[1]);
@@ -289,13 +314,45 @@ const processRanges = (
         const index = 1 + i * 2;
         rangeArray[i][0] = currentPos;
 
-        currentPos += stringBuilder[index].length;
+        // TODO: if we are processing ranges in a non-adjacent file, then this is wrong.
+        // Should just increment by normal length, then adjust for the real length when applying the chanes at the end
+        currentPos += realLength(stringBuilder[index], executionContext.targetDocument.eol);
         rangeArray[i][1] = currentPos;
 
-        currentPos += stringBuilder[index + 1].length;
+        // TODO: same here
+        currentPos += realLength(stringBuilder[index + 1], executionContext.targetDocument.eol);
     }
 
     return stringBuilder.join("");
+};
+
+/** realLength gets the real string length taking CLRF into account  */
+const realLength = (str: string, eol: vscode.EndOfLine): number => {
+    let len = 0;
+
+    if (eol === vscode.EndOfLine.LF) {
+        // LF
+        for (let i = 0; i < str.length; i++) {
+            if (str[i] === "\r") {
+                continue;
+            }
+
+            len++;
+        }
+
+        return len;
+    } else {
+        // CLRF
+        for (let i = 0; i < str.length; i++) {
+            if (str[i] === "\n" && str[i - 1] !== "\r") {
+                len++;
+            }
+
+            len++;
+        }
+
+        return len;
+    }
 };
 
 const getActiveFileText = (executionContext: ExecutionContext) => {
@@ -323,7 +380,7 @@ type RangeList = [number, number][];
 const getSelectedRanges = (executionContext: ExecutionContext): null | RangeList => {
     const { targetEditor } = executionContext;
 
-    if (targetEditor.selections.length == 0) {
+    if (targetEditor.selections.length === 0) {
         return null;
     }
 
@@ -400,7 +457,7 @@ const applyChangesToActiveFile = async (executionContext: ExecutionContext, isMi
     }
 };
 
-type FileProcessFunc = (filepath: vscode.Uri) => any;
+type FileProcessFunc = (filepath: vscode.Uri) => Promise<any>;
 
 const walkWorkspaceFilesTopDown = async (processFunc: FileProcessFunc): Promise<any> => {
     return walkFilesInternal(processFunc, false);
@@ -495,43 +552,49 @@ const walkFilesBottomUpInternal = async (
     }
 };
 
-const typeAssertUri = (uri: any) => {
+const toUri = (uri: any) => {
     if (typeof uri === "string") {
-        uri = vscode.Uri.file(uri);
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (workspaceFolders && workspaceFolders.length > 0) {
+            uri = vscode.Uri.joinPath(workspaceFolders[0].uri, uri);
+        } else {
+            uri = vscode.Uri.file(uri);
+        }
     }
 
     if (!(uri instanceof vscode.Uri)) {
         throw new HardError(
-            "uri must be of type vscode.Uri or string (which will just be converted to a uri with vscode.Uri.file)"
+            "uri must be of type vscode.Uri or string (which will just be converted to a relative uri or a global uri if not in a workspace)"
         );
     }
 
     return uri;
 };
 
-const macroGetFileText = async (uri: any) => {
-    uri = typeAssertUri(uri);
-    return getFileText(uri);
-};
-
-const getFileText = async (uri: vscode.Uri): Promise<string> => {
+const macroGetFileText = async (uri: any): Promise<string> => {
+    uri = toUri(uri);
     const bytes = await vscode.workspace.fs.readFile(uri);
     const str = new TextDecoder().decode(bytes);
     return str;
 };
 
-const macroSetFileText = async (executionContext: ExecutionContext, uri: any, newText: any) => {
+const macroSetFileText = (executionContext: ExecutionContext, uri: any, newText: any) => {
     newText = typeAssertString(newText);
-    uri = typeAssertUri(uri);
+    uri = toUri(uri);
 
-    executionContext.changes;
+    executionContext.setChange({
+        newText: newText,
+        fileUri: uri,
+    });
 };
 
 const logToOutput = (executionContext: ExecutionContext, ...messages: any[]) => {
     const { outputChannel } = executionContext;
     outputChannel.append(messages.map(toLogObjectString).join(" "));
     outputChannel.append("\n");
+    outputChannel.show(true);
 };
+
 const errorToOutput = (executionContext: ExecutionContext, ...messages: any[]) => {
     const { outputChannel } = executionContext;
 
@@ -541,4 +604,10 @@ const errorToOutput = (executionContext: ExecutionContext, ...messages: any[]) =
     outputChannel.append("ERROR: ");
     outputChannel.append(messages.map(toLogObjectString).join(" "));
     outputChannel.append("\n");
+
+    outputChannel.show(true);
 };
+
+function clearOutput(executionContext: ExecutionContext) {
+    executionContext.outputChannel.clear();
+}
