@@ -2,9 +2,9 @@
     "name": "macro-runner",
     "displayName": "Macro Runner",
     "description": "Make edits to text files with Javascript",
-    "version": "1.2.4",
+    "version": "2.0.0",
     "engines": {
-        "vscode": "^1.65.0"
+        "vscode": "^1.74.0"
     },
     "icon": "res/icon.png",
     "galleryBanner": {
@@ -28,6 +28,7 @@
     },
     "publisher": "El-Tejaso",
     "main": "./out/extension.js",
+    "activationEvents": [],
     "contributes": {
         "commands": [
             {
