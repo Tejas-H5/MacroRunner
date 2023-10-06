@@ -2,7 +2,7 @@
 
 This extension allows you to read and modify the current file (or other files in the workspace) with some quickly written JavaScript.
 
-The extension adds the following commands:
+**NOTE: the documentation has moved to the `New Macro` command template.**
 
 ## New Macro (Macro Runner) `MacroRunner.newMacro`
 

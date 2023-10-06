@@ -81,6 +81,33 @@ class ExecutionContext {
     }
 }
 
+// More for fun, really. It works, but it's pretty useless.
+// I will add it anyway, but I won't document it at all
+const mutex = {
+    isAquired: false,
+    awaiting: [] as any[],
+    withLock: async (fn: () => Promise<void>) => {
+        // lock the mutex
+        if (mutex.isAquired) {
+            const promise = new Promise((resolve) => mutex.awaiting.push(resolve));
+            await promise;
+        }
+
+        mutex.isAquired = true;
+
+        await fn();
+
+        mutex.isAquired = false;
+
+        // unlock
+        if (mutex.awaiting.length > 0) {
+            // resolve one of the mutexes that were waiting.
+            const lastResolve = mutex.awaiting.pop();
+            lastResolve(undefined);
+        }
+    },
+};
+
 const newMacroContext = (executionContext: ExecutionContext) => {
     const dontUseTimeoutFunctions = () => {
         // Ironing out the edge cases was too hard :(
@@ -125,6 +152,9 @@ const newMacroContext = (executionContext: ExecutionContext) => {
         },
 
         isCancelled: () => executionContext.cancelSignal.isCancelled,
+
+        // secret items
+        mutex: mutex,
     };
 
     return macroContext;
@@ -132,17 +162,34 @@ const newMacroContext = (executionContext: ExecutionContext) => {
 
 const newSleepTimer = (executionContext: ExecutionContext) => {
     const sleepTimer = {
-        awaitUntil: Date.now(),
+        hasUnresolvedTimers: () => {
+            for (const x in sleepTimer.resolveFuncs) {
+                return true;
+            }
+            return false;
+        },
+        resolveFuncs: new Map<any, any>(),
+        resolveAll: () => {
+            for (const fn of sleepTimer.resolveFuncs.values()) {
+                fn();
+            }
+
+            sleepTimer.resolveFuncs.clear();
+        },
         sleep: (ms: any) => {
             if (typeof ms !== "number") {
                 throw new HardError("argument wasn't a number");
             }
 
-            sleepTimer.awaitUntil = Date.now() + ms;
             return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve(undefined);
+                const id = setTimeout(() => {
+                    if (sleepTimer.resolveFuncs.has(id)) {
+                        sleepTimer.resolveFuncs.delete(id);
+                        resolve(undefined);
+                    }
                 }, ms);
+
+                sleepTimer.resolveFuncs.set(id, resolve);
             });
         },
         join: () =>
@@ -150,7 +197,7 @@ const newSleepTimer = (executionContext: ExecutionContext) => {
                 const interval = setInterval(() => {
                     if (
                         executionContext.cancelSignal.isCancelled ||
-                        sleepTimer.awaitUntil < Date.now()
+                        !sleepTimer.hasUnresolvedTimers()
                     ) {
                         clearInterval(interval);
                         resolve(undefined);
@@ -246,6 +293,7 @@ export const runMacro = async (code: string, targetEditor: vscode.TextEditor) =>
 const cancelAllMacros = () => {
     for (let i = 0; i < currentlyRunning.length; i++) {
         currentlyRunning[i].cancelSignal.isCancelled = true;
+        currentlyRunning[i].timerStore.resolveAll();
     }
 };
 

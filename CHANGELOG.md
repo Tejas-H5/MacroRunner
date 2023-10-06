@@ -2,6 +2,12 @@
 
 The API has almost stabilized. There may be a few breaking changes here and there though
 
+## 2.0.1 fixes 2023/10/7
+
+-   Updated cancellation mechanism to cancel the sleep timer mid-sleep
+-   Can now await multiple sleep timers at once
+-   Added hidden secret `mutex` object to the context
+
 ## 2.0.0 The API-V2 update 2023/10/2
 
 Lots of breaking changes in this one:
