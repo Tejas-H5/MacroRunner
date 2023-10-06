@@ -48,16 +48,3 @@ Lots of breaking changes in this one:
 
 -   Added all features
 -   Renamed from macrorunner to ScriptRunner
-
-<br>
-<br>
-<br>
-<br>
-<br>
-
-<hr>
-
-## 1.3.0 [have not yet started working on this]
-
--   [not started] Added integration tests
--   [not started] Added logging capabilities. Access a file using `getFile("filename") -> EditableFile`, and write to that.
