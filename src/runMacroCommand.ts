@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { findMacroEditor, findTargetEditor } from "./editorFinding";
+import { findAvailableEditors, findMacroEditor, findTargetEditor } from "./editorFinding";
 import { TextDecoder, TextEncoder } from "util";
 import { getDefaultURI, filePicker } from "./fileUtil";
 import { HardError, SoftError, handleErrors, handleErrorsSync } from "./logging";
@@ -39,6 +39,12 @@ export const runMacroCommand = async () =>
         const macroEditor = findMacroEditor();
         const targetEditor = findTargetEditor(macroEditor);
         const macroSource = macroEditor.document.getText();
+
+        if (!targetEditor) {
+            // TODO: some macros don't need a target file. But making the target file optional
+            // Will make errors for those macros a bit strange.
+            throw new HardError(`The macro file and the target file must both be visible`);
+        }
 
         await runMacro(macroSource, targetEditor);
     });
@@ -155,10 +161,13 @@ const newMacroContext = (executionContext: ExecutionContext) => {
 
         // secret items
         mutex: mutex,
+        printAvailableEditors: () => debugPrintAvailableEditors(macroContext), // TODO: fix this bug, and remove this
     };
 
     return macroContext;
 };
+
+type MacroContext = ReturnType<typeof newMacroContext>;
 
 const newSleepTimer = (executionContext: ExecutionContext) => {
     const sleepTimer = {
@@ -658,3 +667,18 @@ const errorToOutput = (executionContext: ExecutionContext, ...messages: any[]) =
 function clearOutput(executionContext: ExecutionContext) {
     executionContext.outputChannel.clear();
 }
+
+const debugPrintAvailableEditors = (macroContext: MacroContext) => {
+    // mainly to debug a rare bug where there are only two visible editors, but the plugin seems to think there are three or more ?
+    // I will just have to run this the next time I encounter it in the wild.
+    const editors = findAvailableEditors();
+    const target = findTargetEditor();
+    macroContext.overrides.console.log("Current visible editors:");
+    for (let i = 0; i < editors.length; i++) {
+        const e = editors[i];
+        const d = e.document;
+        const isTarget = e === target ? "[Target] " : "";
+        const str = `${i}| ${isTarget}${d.fileName} | ${d.languageId} | ${d.uri.scheme}`;
+        macroContext.overrides.console.log(str);
+    }
+};

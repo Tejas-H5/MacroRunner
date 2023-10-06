@@ -4,7 +4,11 @@ import { HardError } from "./logging";
 export const findAvailableEditors = () => {
     let visibleEditors = vscode.window.visibleTextEditors;
     visibleEditors = visibleEditors.filter((editor) => {
-        return !["output"].includes(editor.document.uri.scheme);
+        if (editor.document.uri.scheme === "output") {
+            return false;
+        }
+
+        return true;
     });
 
     return visibleEditors;
@@ -42,7 +46,7 @@ export const findMacroEditor = () => {
 
 export const findTargetEditor = (
     macroEditor: vscode.TextEditor | undefined = undefined
-): vscode.TextEditor => {
+): vscode.TextEditor | undefined => {
     let activeEditor = vscode.window.activeTextEditor;
 
     let visibleEditors = findAvailableEditors();
@@ -77,8 +81,5 @@ export const findTargetEditor = (
         }
     }
 
-    throw new HardError(
-        `The macro file and the target file must both be visible.
-Also, this doesn't work for files larger than 50mb, use the command 'Run Macro (for large files > 50mb)'`
-    );
+    return undefined;
 };

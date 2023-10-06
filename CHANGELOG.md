@@ -7,6 +7,7 @@ The API has almost stabilized. There may be a few breaking changes here and ther
 -   Updated cancellation mechanism to cancel the sleep timer mid-sleep
 -   Can now await multiple sleep timers at once
 -   Added hidden secret `mutex` object to the context
+-   Fix Load Macro command not opening the actual file
 
 ## 2.0.0 The API-V2 update 2023/10/2
 

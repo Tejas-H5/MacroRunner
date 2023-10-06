@@ -15,7 +15,7 @@ const {
     setSelectedRanges, // ([int, int][]) => void - Sets the selected ranges (after macro has finished running). Use it to write a macro that moves the cursor/s around
     
     // useful helpers
-    processRanges,  // (text: string, ranges: [int, int][], processFunc: (string) => string) => string - Use this to write a macro that will process all selected regions in some text. The ranges are validated to not overlap, and are sorted and updated to thier new positions in-place
+    processRanges,  // (text: string, ranges: [int, int][], processFunc: (string) => string) => string - Use this to write a macro that will process all selected regions in some text. The ranges are validated to not overlap, and are sorted and updated to their new positions in-place
     input,          // async (prompt: string) => Promise<string | undefined> - Get user input. Returns undefined if the user cancels. Don't forget to await it
     exit,           // (message: string) => never - throws a soft-error exception    
 
@@ -27,8 +27,8 @@ const {
     
     // animations
     sleep,                    // async (milliseconds: number) => Promise<void> - await this function to sleep for some ms. It was easier for me to code than the timeout/interval functions
-    applyChangesImmediately,  // async (shouldAddUndoPoint: boolean) => Promise<void> - blits all changes to the active file immediately, before the macro has completed. Used to add intermediate undo-stops by setting shouldAddUndoPoint=true.
-    isCancelled,              // () => boolean - use isCancelled() to check if a cancel signal has been sent to the macro. Currently the only way to mitigate infinte loops other than Task manager
+    applyChangesImmediately,  // async (shouldAddUndoPoint: boolean) => Promise<void> - applies all changes to the active file immediately, before the macro has completed. Used to add intermediate undo-stops by setting shouldAddUndoPoint=true.
+    isCancelled,              // () => boolean - use isCancelled() to check if a cancel signal has been sent to the macro. Currently the only way to mitigate infinite loops other than Task manager
     
     // misc
     require,  // THE require function

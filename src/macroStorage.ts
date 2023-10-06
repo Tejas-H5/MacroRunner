@@ -88,9 +88,18 @@ const loadMacroText = async (macroName: string) => {
 };
 
 const loadMacro = async (macroName: string) => {
-    const macroText = await loadMacroText(macroName);
-    await openMacroTextInAdjacentColumn(macroText);
-    vscode.window.showInformationMessage("Loaded " + macroName);
+    await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+    const dir = getMacroURI();
+    const fileURI = vscode.Uri.joinPath(dir, macroName);
+
+    try {
+        const document = await vscode.workspace.openTextDocument(fileURI);
+        const column = getAdjacentColumn();
+        await vscode.window.showTextDocument(document, column);
+        vscode.window.showInformationMessage("Loaded " + macroName);
+    } catch (err: any) {
+        vscode.window.showErrorMessage(err.message);
+    }
 };
 
 export const loadMacroCommand = async () =>
@@ -108,6 +117,11 @@ export const runSavedMacroCommand = async () =>
 
         const macroText = await loadMacroText(input);
         const targetEditor = findTargetEditor();
+        if (!targetEditor) {
+            // TODO: some macros don't need a target file. But making the target file optional
+            // Will make errors for those macros a bit strange.
+            throw new HardError(`The macro file and the target file must both be visible`);
+        }
 
         await runMacro(macroText, targetEditor);
     });
